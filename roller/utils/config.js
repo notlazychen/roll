@@ -42,7 +42,7 @@ const CLOUD = {
  *   4) 只能配子域名，配了端口就只能用该端口。
  */
 
-const ENV = 'dev'
+const ENV = 'prod'
 
 const ENVS = {
   dev: {
@@ -52,7 +52,9 @@ const ENVS = {
     allowDevLogin: true
   },
   prod: {
-    baseUrl: 'https://api.your-domain.com',
+    // 生产后端：Lighthouse 单机 Docker 部署，nginx 反代到 roll 容器的 8080。
+    // 部署说明见 ../roller-server/deploy/docker-compose.lighthouse.yml
+    baseUrl: 'https://roll.acgun.cn',
     allowDevLogin: false
   }
 }
