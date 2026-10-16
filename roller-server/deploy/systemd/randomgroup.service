@@ -1,0 +1,57 @@
+# systemd 服务单元（不用 Docker、直接在服务器上跑 dotnet 时使用）
+# ------------------------------------------------------------------
+# 安装步骤：
+#   1) 发布产物放到 /opt/random-group/app
+#      dotnet publish RandomGroup.Api/RandomGroup.Api.csproj -c Release -o publish
+#      rsync -av --delete publish/ user@server:/opt/random-group/app/
+#   2) 创建 /opt/random-group/app.env，写入生产环境变量（不要写进代码库）：
+#      ASPNETCORE_ENVIRONMENT=Production
+#      ASPNETCORE_URLS=http://127.0.0.1:5080
+#      ConnectionStrings__Roll=Host=...;Port=5432;Username=...;Password=...;Database=roll;Timeout=15;Command Timeout=120
+#      Jwt__Key=<至少32位随机字符串>
+#      WeChat__AppId=<你的AppId>
+#      WeChat__AppSecret=<你的AppSecret>
+#      Auth__AllowDevLogin=false
+#      Database__AutoMigrate=true
+#   3) chmod 600 /opt/random-group/app.env
+#   4) cp randomgroup.service /etc/systemd/system/
+#      systemctl daemon-reload && systemctl enable --now randomgroup
+#      systemctl status randomgroup
+
+[Unit]
+Description=随机小队 API (ASP.NET Core)
+Documentation=https://learn.microsoft.com/aspnet/core/host-and-deploy/linux-nginx
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+WorkingDirectory=/opt/random-group/app
+
+# ASP.NET Core 运行时自带的 systemd 集成（需 dotnet-runtime 安装完整）
+ExecStart=/usr/bin/dotnet /opt/random-group/app/RandomGroup.Api.dll
+
+EnvironmentFile=/opt/random-group/app.env
+Environment=DOTNET_EnableDiagnostics=0
+
+# 崩溃后自动重启
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+
+# 用非 root 账号运行（先创建：useradd -r -s /sbin/nologin rollapi）
+User=rollapi
+Group=rollapi
+
+# 基础加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/random-group/app
+
+# 单机资源上限，按服务器规格调整
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

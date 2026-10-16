@@ -1,0 +1,257 @@
+<view class="page" wx:if="{{group}}">
+
+  <!-- ============ 顶部栏 ============ -->
+  <view class="topbar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="flex1"></view>
+    <view class="idpill" bindtap="openIdentity">
+      <view class="avatar avatar-sm" style="background: {{me.color || '#6D5BF6'}};">{{me.initial || '我'}}</view>
+      <text class="idpill-name">{{me.name}}</text>
+    </view>
+    <view class="menu-btn" bindtap="openMenu">⋯</view>
+  </view>
+
+  <!-- ============ 小队头部 ============ -->
+  <view class="ghead">
+    <view class="ghead-theme" bindtap="openThemeEditor">
+      <text>{{group.theme}}</text>
+      <text class="pen" wx:if="{{isLeader}}">✎</text>
+    </view>
+    <view class="ghead-meta">
+      <text class="meta">#{{group.code}}</text>
+      <text class="meta">{{members.length}}/20 人</text>
+      <text class="meta lockmeta" wx:if="{{group.hasPasscode}}">🔒 需要口令</text>
+    </view>
+
+    <scroll-view scroll-x class="members">
+      <view class="member" wx:for="{{members}}" wx:key="id">
+        <view class="avatar-wrap">
+          <view class="avatar" style="background: {{item.color}};">{{item.initial}}</view>
+          <view class="leader-flag" wx:if="{{item.isLeader}}">★</view>
+        </view>
+        <view class="member-name">{{item.name}}</view>
+      </view>
+      <view class="member" wx:if="{{!isFull && devMode}}" bindtap="openIdentity">
+        <view class="avatar add-avatar">＋</view>
+        <view class="member-name">加成员</view>
+      </view>
+    </scroll-view>
+    <view class="t-tiny mt8" style="padding-left: 4rpx;" wx:if="{{devMode}}">开发模式：可新建/切换测试身份，在一台设备上模拟多人协作</view>
+  </view>
+
+  <!-- ============ 备选项（配置 / 准备阶段） ============ -->
+  <block wx:if="{{stage === 'config' || stage === 'preparing'}}">
+    <view class="section {{stage === 'preparing' ? 'section-dim' : ''}}">
+      <view class="section-head">
+        <view class="t-title">备选项</view>
+        <view class="t-muted">{{options.length}} 项 · 票数即权重</view>
+      </view>
+
+      <view class="opt-list">
+        <view class="opt" wx:for="{{options}}" wx:key="id">
+          <view class="opt-bar" style="background: {{item.color}};"></view>
+          <view class="flex1 opt-body">
+            <view class="opt-title">{{item.title}}</view>
+            <view class="opt-sub">由 {{item.creatorName}} 创建</view>
+          </view>
+          <view class="opt-vote-num {{item.voteCount > 0 ? 'has' : ''}}">{{item.voteCount}}<text class="opt-vote-unit">票</text></view>
+          <view
+            class="vote-btn {{item.votedByMe ? 'voted' : ''}}"
+            catchtap="onVote"
+            data-id="{{item.id}}"
+          >{{item.votedByMe ? '已投' : '投票'}}</view>
+          <view class="del-btn" wx:if="{{item.canDelete}}" catchtap="onDeleteOption" data-id="{{item.id}}">✕</view>
+        </view>
+
+        <view class="empty-sm" wx:if="{{options.length === 0}}">
+          <text>还没有备选项</text>
+          <text class="t-tiny" style="display:block;margin-top:8rpx;">成员都可以添加，投票多的更容易被抽中</text>
+        </view>
+      </view>
+
+      <!-- 添加备选项 -->
+      <view class="add-opt" wx:if="{{isMember}}">
+        <input
+          class="input flex1"
+          value="{{newOption}}"
+          maxlength="20"
+          placeholder="添加一个备选项…"
+          placeholder-class="ph"
+          bindinput="onNewOption"
+          bindconfirm="submitOption"
+          confirm-type="done"
+        />
+        <view class="add-btn" bindtap="submitOption">添加</view>
+      </view>
+      <view class="add-opt-hint" wx:if="{{isMember}}">添加后会自动投创建者一票，保证该项有初始权重</view>
+
+      <!-- 底部动作 -->
+      <view class="roll-area" wx:if="{{isLeader}}">
+        <view class="btn btn-primary" bindtap="openDeadlineSheet">
+          <text class="roll-emoji">🎲</text>
+          <text>开始随机 Roll</text>
+        </view>
+        <view class="t-tiny mt12" style="text-align: center;">点击后进入准备环节，全员确认后开始抽取</view>
+      </view>
+      <view class="wait-hint" wx:elif="{{isMember}}">
+        <text class="wait-dot"></text>
+        <text>等待小队长开启随机…</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- ============ 转盘（随机 / 结果） ============ -->
+  <view class="section wheel-section" wx:if="{{wheelVisible}}">
+    <!-- 常驻占位，避免动画结束后标题消失把 canvas 顶得移位 -->
+    <view class="wheel-title">{{spinning ? '正在随机…' : ''}}</view>
+    <view class="wheel-box">
+      <canvas wx:if="{{!canvasOff}}" id="wheel" type="2d" class="wheel-canvas"></canvas>
+    </view>
+
+    <!-- 结果 -->
+    <view class="result-card" wx:if="{{stage === 'result' && !spinning && resultOption}}">
+      <view class="result-label">🎉 随机结果</view>
+      <view class="result-name">{{resultOption.title}}</view>
+      <view class="result-meta">{{resultOption.creatorName}} 创建 · {{resultOption.votes}} 票 · 权重 {{resultOption.pctText}}</view>
+      <view class="dialog-btns mt24" wx:if="{{isLeader}}">
+        <view class="btn btn-plain flex1" bindtap="onBackToConfig">重新配置</view>
+        <view class="btn btn-primary flex1" bindtap="onReroll">再抽一次</view>
+      </view>
+      <view class="t-muted mt16" wx:else style="text-align: center;">等待小队长操作</view>
+    </view>
+
+    <!-- 权重图例 -->
+    <view class="legend" wx:if="{{!spinning}}">
+      <view class="legend-item" wx:for="{{weights.items}}" wx:key="optionId">
+        <view class="legend-dot" style="background: {{item.color}};"></view>
+        <text class="legend-title">{{item.title}}</text>
+        <text class="legend-pct">{{item.pctText}}</text>
+      </view>
+      <view class="legend-note" wx:if="{{weights.uniform}}">当前无人投票，各项等概率</view>
+      <view class="legend-note" wx:elif="{{weights.totalVotes > 0}}">票数为 0 的备选项权重为 0，不会被抽中</view>
+    </view>
+  </view>
+
+  <!-- ============ 非成员提示 ============ -->
+  <view class="joinbar" wx:if="{{!isMember}}">
+    <view class="t-sub flex1">你尚未加入该小队</view>
+    <view class="btn btn-primary btn-sm" bindtap="joinCurrent">加入小队</view>
+  </view>
+
+  <view class="bottom-space"></view>
+
+  <!-- ============ 准备环节遮罩 ============ -->
+  <view class="prep-mask" wx:if="{{stage === 'preparing'}}">
+    <view class="prep-card">
+      <view class="prep-emoji">🎯</view>
+      <view class="prep-title">准备完毕？</view>
+      <view class="prep-desc">确认后进入随机抽取；任一成员取消都会中断本次准备</view>
+
+      <view class="prep-timer">
+        <text class="prep-timer-num">{{countdown}}</text>
+        <text class="prep-timer-label">{{hasDeadline ? '后自动开始' : '不限时'}}</text>
+      </view>
+
+      <block wx:if="{{isMember && myReady === 'none'}}">
+        <view class="dialog-btns">
+          <view class="btn btn-plain flex1" bindtap="onCancelReady">取消</view>
+          <view class="btn btn-primary flex1" bindtap="onConfirmReady">确定</view>
+        </view>
+      </block>
+      <block wx:elif="{{myReady === 'confirm'}}">
+        <view class="prep-wait">
+          <text class="prep-wait-icon">✅</text>
+          <text>你已确认，等待其他成员</text>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="prep-wait">
+          <text class="prep-wait-icon">👀</text>
+          <text>等待小队成员确认</text>
+        </view>
+      </block>
+
+      <view class="prep-progress">
+        <view class="prep-progress-text">{{confirmedCount}}/{{members.length}} 已确认</view>
+        <view class="prep-avatars">
+          <view
+            class="avatar avatar-sm"
+            wx:for="{{members}}"
+            wx:key="id"
+            style="background: {{item.color}}; opacity: {{item.ready === 'confirm' ? 1 : 0.28}};"
+          >{{item.initial}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 设置最晚结束时间 ============ -->
+  <view class="sheet-mask" wx:if="{{showDeadlineSheet}}" catchtap="closeDeadlineSheet">
+    <view class="sheet" catchtap="noop">
+      <view class="t-title">设置准备最晚结束时间</view>
+      <view class="t-muted mt8">到达该时间后，即使还有成员未确认也会开始随机</view>
+      <view class="dl-list mt24">
+        <view
+          class="dl-item {{deadlineChoice === item.v ? 'active' : ''}}"
+          wx:for="{{deadlineOptions}}"
+          wx:key="v"
+          data-v="{{item.v}}"
+          bindtap="pickDeadline"
+        >
+          <text>{{item.label}}</text>
+          <text class="dl-check" wx:if="{{deadlineChoice === item.v}}">✓</text>
+        </view>
+      </view>
+      <view class="btn btn-primary mt24" bindtap="startRoll">开启准备</view>
+    </view>
+  </view>
+
+  <!-- ============ 修改主题 ============ -->
+  <view class="sheet-mask" wx:if="{{showThemeEditor}}" catchtap="closeThemeEditor">
+    <view class="sheet" catchtap="noop">
+      <view class="t-title">修改小队主题</view>
+      <view class="t-muted mt8">{{themeInput.length}}/10</view>
+      <input class="input mt16" value="{{themeInput}}" maxlength="10" placeholder="小队主题" bindinput="onThemeInput" />
+      <view class="btn btn-primary mt24" bindtap="saveTheme">保存</view>
+    </view>
+  </view>
+
+  <!-- ============ 设置口令 ============ -->
+  <view class="sheet-mask" wx:if="{{showPasscodeSheet}}" catchtap="closePasscodeSheet">
+    <view class="sheet" catchtap="noop">
+      <view class="t-title">小队口令</view>
+      <view class="t-muted mt8">5 位数字；留空表示取消口令</view>
+      <input class="input mt16" type="number" value="{{passInput}}" maxlength="5" placeholder="请输入 5 位数字" bindinput="onPassInput" />
+      <view class="btn btn-primary mt24" bindtap="savePasscode">保存</view>
+    </view>
+  </view>
+
+  <!-- ============ 切换测试身份（仅开发模式） ============ -->
+  <view class="sheet-mask" wx:if="{{showIdentitySheet}}" catchtap="closeIdentity">
+    <view class="sheet" catchtap="noop">
+      <view class="t-title">切换测试身份</view>
+      <view class="t-muted mt8">开发模式专用：每个昵称对应一个测试账号，可在同一台设备上模拟多个成员</view>
+      <scroll-view scroll-y class="id-list mt20">
+        <view
+          class="id-item {{item.isMe ? 'active' : ''}}"
+          wx:for="{{identities}}"
+          wx:key="uid"
+          data-uid="{{item.uid}}"
+          bindtap="onSwitchIdentity"
+        >
+          <view class="avatar" style="background: {{item.color}};">{{item.initial}}</view>
+          <view class="flex1" style="margin-left: 20rpx;">
+            <view class="id-name">{{item.name}}</view>
+            <view class="t-tiny">{{item.joined ? '已在小队中' : '未加入本组'}}</view>
+          </view>
+          <text class="id-check" wx:if="{{item.isMe}}">✓</text>
+        </view>
+      </scroll-view>
+      <view class="row mt20">
+        <input class="input flex1 input-small" value="{{newIdentityName}}" placeholder="新成员昵称" bindinput="onNewIdentityName" />
+        <view class="btn btn-ghost btn-sm" style="margin-left: 16rpx;" bindtap="addAndJoin">添加并加入</view>
+      </view>
+    </view>
+  </view>
+
+</view>

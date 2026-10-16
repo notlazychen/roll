@@ -1,0 +1,65 @@
+# 部署用 docker compose
+# ------------------------------------------------------------------
+# 用法（在 server/deploy 目录下）：
+#   cp .env.example .env      # 改里面的密码、JWT 密钥、微信 AppId/AppSecret
+#   docker compose up -d --build
+#
+# 两种常见组合：
+#   A. 只跑 API，数据库用你现有的 PostgreSQL：
+#        docker compose up -d --build api
+#      并把 .env 里的 ConnectionStrings__Roll 指向那台机器。
+#   B. API 和 PostgreSQL 一起跑：
+#        docker compose up -d --build
+#      此时 ConnectionStrings__Roll 用下面默认的 db 主机名即可。
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: roll-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-roll}
+      # 中文排序与编码
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - roll-pgdata:/var/lib/postgresql/data
+    # 生产环境不要把数据库端口暴露到公网；确实需要远程连接时再打开，并限制来源 IP
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-roll}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: roll-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      # 生产环境的连接串与密钥都走环境变量，不写进配置文件
+      ConnectionStrings__Roll: ${ConnectionStrings__Roll:-Host=db;Port=5432;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB:-roll};Timeout=15;Command Timeout=120}
+      Jwt__Key: ${Jwt__Key:?请在 .env 中设置 Jwt__Key（至少 32 位随机字符串）}
+      Jwt__Issuer: ${Jwt__Issuer:-random-group}
+      Jwt__Audience: ${Jwt__Audience:-random-group-miniprogram}
+      WeChat__AppId: ${WeChat__AppId}
+      WeChat__AppSecret: ${WeChat__AppSecret}
+      # 生产环境务必保持 false：开发模式登录只用于本地联调
+      Auth__AllowDevLogin: "false"
+      # 首次启动自动建表；之后可以改回 false
+      Database__AutoMigrate: ${Database__AutoMigrate:-true}
+    # 只监听本机，由 Nginx 负责 HTTPS 与对外暴露
+    ports:
+      - "127.0.0.1:5080:8080"
+
+volumes:
+  roll-pgdata:

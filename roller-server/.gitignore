@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+publish/
+dotnet-tools.json
+appsettings.Development.json
+appsettings.Production.json
+deploy/.env
+*.user

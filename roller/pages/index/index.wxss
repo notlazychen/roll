@@ -1,0 +1,333 @@
+.page {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+/* ---------- 顶部 ---------- */
+.hero {
+  padding: 24rpx 32rpx 28rpx;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 70%, rgba(255, 255, 255, 0) 100%);
+}
+
+.hero-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.hero-title {
+  font-size: 46rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+  color: #1F2233;
+}
+
+.hero-sub {
+  font-size: 24rpx;
+  color: #9AA0B5;
+  margin-top: 6rpx;
+}
+
+.icon-btn {
+  position: relative;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #F4F5FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16rpx;
+}
+
+.icon-btn:active {
+  opacity: 0.7;
+}
+
+.icon {
+  font-size: 34rpx;
+}
+
+.badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 8rpx;
+  border-radius: 17rpx;
+  background: #FF5A5F;
+  color: #FFFFFF;
+  font-size: 20rpx;
+  line-height: 34rpx;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* 搜索 */
+.search {
+  margin-top: 26rpx;
+  height: 88rpx;
+  background: #F4F5FA;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 10rpx 0 26rpx;
+}
+
+.search-icon {
+  font-size: 28rpx;
+  opacity: 0.5;
+  margin-right: 14rpx;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  font-size: 28rpx;
+  color: #1F2233;
+}
+
+.search-clear {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: #E4E6EF;
+  color: #6B7089;
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6rpx;
+}
+
+.search-btn {
+  height: 68rpx;
+  padding: 0 30rpx;
+  border-radius: 34rpx;
+  background: linear-gradient(135deg, #6D5BF6 0%, #9B5CFF 100%);
+  color: #FFFFFF;
+  font-size: 26rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ph {
+  color: #B4B9CC;
+}
+
+/* ---------- 列表 ---------- */
+.login-tip {
+  margin: 20rpx 32rpx 0;
+  padding: 26rpx 28rpx;
+  border-radius: 24rpx;
+  background: #FFF4E3;
+  border: 2rpx solid #F5D9A8;
+  display: flex;
+  align-items: center;
+}
+
+.login-tip-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.login-tip-title {
+  font-size: 29rpx;
+  font-weight: 600;
+  color: #8A5A12;
+}
+
+.login-tip-sub {
+  margin-top: 6rpx;
+  font-size: 23rpx;
+  color: #A9803F;
+  line-height: 1.4;
+}
+
+.login-tip-go {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #C97A12;
+}
+
+.list-wrap {
+  padding: 8rpx 32rpx 0;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.gcard {
+  position: relative;
+  width: 48.5%;
+  height: 250rpx;
+  border-radius: 28rpx;
+  padding: 26rpx 24rpx;
+  margin-bottom: 22rpx;
+  overflow: hidden;
+  box-shadow: 0 6rpx 20rpx rgba(31, 34, 51, 0.05);
+  transition: transform 0.12s ease;
+}
+
+.gcard:active {
+  transform: scale(0.975);
+}
+
+.lock {
+  position: absolute;
+  left: 22rpx;
+  top: 20rpx;
+  font-size: 26rpx;
+  opacity: 0.85;
+}
+
+.lock-empty {
+  height: 26rpx;
+}
+
+.gtheme {
+  margin-top: 26rpx;
+  font-size: 44rpx;
+  line-height: 1.18;
+  font-weight: 700;
+  word-break: break-all;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.gfoot {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gfoot-left {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.gcode {
+  font-size: 22rpx;
+  color: rgba(31, 34, 51, 0.42);
+  margin-right: 8rpx;
+}
+
+.gtag {
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.75);
+  color: #4A4F66;
+  margin-right: 8rpx;
+}
+
+.gtag-mine {
+  color: #6D5BF6;
+}
+
+.gcount {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: rgba(31, 34, 51, 0.55);
+  flex-shrink: 0;
+}
+
+.gjoined {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 6rpx 18rpx;
+  border-radius: 0 0 0 20rpx;
+  background: rgba(109, 91, 246, 0.9);
+  color: #FFFFFF;
+  font-size: 20rpx;
+}
+
+/* ---------- 悬浮按钮 ---------- */
+.bottom-space {
+  height: 180rpx;
+}
+
+.fab {
+  position: fixed;
+  left: 50%;
+  bottom: calc(48rpx + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  height: 96rpx;
+  padding: 0 52rpx;
+  border-radius: 48rpx;
+  background: linear-gradient(135deg, #6D5BF6 0%, #9B5CFF 100%);
+  color: #FFFFFF;
+  font-size: 31rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16rpx 36rpx rgba(109, 91, 246, 0.38);
+  z-index: 20;
+}
+
+.fab:active {
+  opacity: 0.9;
+}
+
+.fab-plus {
+  font-size: 40rpx;
+  margin-right: 10rpx;
+  line-height: 1;
+}
+
+/* ---------- 弹窗 ---------- */
+.field {
+  margin-top: 4rpx;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 26rpx;
+  color: #4A4F66;
+  font-weight: 500;
+  margin-bottom: 12rpx;
+}
+
+.dialog-btns {
+  display: flex;
+  align-items: center;
+}
+
+.dialog-btns .btn {
+  margin: 0 8rpx;
+}
+
+.join-theme {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1F2233;
+  word-break: break-all;
+}
+
+.join-hint {
+  padding: 22rpx;
+  border-radius: 20rpx;
+  background: #F6F7FB;
+  font-size: 26rpx;
+  color: #6B7089;
+  text-align: center;
+}

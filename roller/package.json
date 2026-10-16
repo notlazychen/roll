@@ -1,0 +1,9 @@
+{
+  "name": "random-squad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "随机小队 - 小队内随机抽取小程序",
+  "dependencies": {
+    "@tencent-ai/workbuddy-cloud-sdk": "dev"
+  }
+}

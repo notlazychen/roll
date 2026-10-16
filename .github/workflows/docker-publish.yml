@@ -1,0 +1,65 @@
+name: Build and Push Backend Image
+
+# 触发条件：
+#   - 推送到 main 且改动涉及后端（roller-server/**）或本 workflow
+#   - 打 v* 标签
+#   - 手动触发（Actions 页面点 Run workflow）
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'roller-server/**'
+      - '.github/workflows/docker-publish.yml'
+  workflow_dispatch:
+
+env:
+  # Docker Hub 镜像名：用户名 crazor6 / 仓库名 roll
+  IMAGE_NAME: crazor6/roll
+  # monorepo 结构：后端在子目录，构建上下文指向它
+  BUILD_CONTEXT: ./roller-server
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            # main 分支 -> latest
+            type=raw,value=latest,enable={{is_default_branch}}
+            # 提交短 SHA，方便回滚到任意历史版本
+            type=sha,format=short,prefix=sha-
+            # v1.2.3 标签 -> 1.2.3
+            type=semver,pattern={{version}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.BUILD_CONTEXT }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions 内置缓存，跨次构建复用 NuGet restore 层
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
