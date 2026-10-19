@@ -53,8 +53,8 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Roll: ${ConnectionStrings__Roll:-Host=roll-pgsql;Port=5432;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB:-roll};Timeout=15;Command Timeout=120}
       Jwt__Key: ${Jwt__Key:?请在 .env 中设置 Jwt__Key}
-      Jwt__Issuer: ${Jwt__Issuer:-random-group}
-      Jwt__Audience: ${Jwt__Audience:-random-group-miniprogram}
+      Jwt__Issuer: ${Jwt__Issuer:-ledger}
+      Jwt__Audience: ${Jwt__Audience:-ledger-miniprogram}
       WeChat__AppId: ${WeChat__AppId:-}
       WeChat__AppSecret: ${WeChat__AppSecret:-}
       Auth__AllowDevLogin: "false"

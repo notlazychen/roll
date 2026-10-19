@@ -66,7 +66,6 @@ public sealed class ApiExceptionMiddleware
             await WriteAsync(context, 500, "服务端开小差了，请稍后重试", null);
         }
     }
-
     private static async Task WriteAsync(HttpContext context, int status, string message, object? extra)
     {
         if (context.Response.HasStarted) return;

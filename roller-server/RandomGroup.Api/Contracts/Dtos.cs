@@ -1,9 +1,9 @@
 namespace RandomGroup.Api.Contracts;
 
 /// <summary>
-/// 响应结构与小程序端原来的 utils/store.js 保持一致：
-/// 1) 所有时间字段都是「毫秒时间戳」数字，前端可直接做减法算倒计时；
-/// 2) 成员/备选项/通知里的用户标识统一叫 uid；
+/// 响应结构与小程序端 utils/store-http.js 的约定保持一致：
+/// 1) 所有时间字段都是「毫秒时间戳」数字；
+/// 2) 金额字段一律是「分」为单位的整数，前端负责除以 100 显示；
 /// 3) 增删改接口返回 { ok, ... }，失败时 ok=false 且带 error。
 /// </summary>
 public static class TimeMs
@@ -15,68 +15,71 @@ public static class TimeMs
     public static DateTimeOffset? FromMs(long? ms) => ms.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ms.Value) : null;
 }
 
-public record UserDto(long Id, string NickName, string? AvatarUrl, bool IsDevAccount);
+public record UserDto(long Id, string NickName, string? AvatarUrl, bool IsDevAccount, bool TagAutoEnabled);
 
-/// <summary>小队。passcode 只对小队长下发，其他成员拿到空串（避免口令泄露）。</summary>
-public record GroupDto(
+/* ------------------------- 账目 ------------------------- */
+
+public record EntryDto(
     long Id,
-    string Code,
-    string Theme,
-    string Passcode,
-    long OwnerId,
-    string OwnerName,
-    string Stage,
-    long? PrepStartedAt,
-    long? PrepDeadline,
-    long? ResultOptionId,
-    long? ResultAt,
-    long CreatedAt,
-    int MemberCount,
-    bool HasPasscode);
-
-public record MemberDto(long Id, long GroupId, long Uid, string Name, string Ready, long JoinedAt);
-
-public record OptionDto(
-    long Id,
-    long GroupId,
-    string Title,
-    long CreatorId,
-    string CreatorName,
-    long CreatedAt,
-    int VoteCount,
-    IReadOnlyList<long> Voters);
-
-public record WeightItemDto(
-    long OptionId,
-    string Title,
-    int Votes,
-    long CreatorId,
-    string CreatorName,
-    int ColorIndex,
-    double Weight,
-    double Percent);
-
-public record WeightsDto(IReadOnlyList<WeightItemDto> Items, int TotalVotes, bool Uniform);
-
-public record NotificationDto(
-    long Id,
-    long Uid,
-    long? GroupId,
-    string GroupTheme,
     string Type,
-    string Content,
-    bool Read,
-    long CreatedAt);
+    long Amount,
+    string Category,
+    string? Channel,
+    string? Consumer,
+    string? Account,
+    long TradeAt,
+    long CreatedAt,
+    string? Remark,
+    IReadOnlyList<string> Tags);
 
-public record StatsDto(int JoinedCount, int OwnedCount);
+/// <summary>新增 / 修改账目的请求体。时间都是毫秒时间戳。</summary>
+public record EntryRequest(
+    string Type,
+    long Amount,
+    string? Category,
+    string? Channel,
+    string? Consumer,
+    string? Account,
+    long TradeAt,
+    string? Remark,
+    string[]? Tags);
 
-/// <summary>轮询用的轻量状态，只包含推进阶段与刷新界面所需的最小信息</summary>
-public record GroupStateDto(
-    long GroupId,
-    string Stage,
-    int MemberCount,
-    int OptionCount,
-    int ConfirmedCount,
-    long? PrepDeadline,
-    long? ResultOptionId,
-    long? ResultAt);
+public record EntryPageDto(IReadOnlyList<EntryDto> Items, bool HasMore, string? NextCursor);
+
+/* ------------------------- 选项源 ------------------------- */
+
+public record OptionItemDto(long Id, string Kind, string Name, string? Parent, bool IsPreset);
+
+public record ChannelGroupDto(string Parent, IReadOnlyList<OptionItemDto> Items);
+
+public record OptionsDto(
+    IReadOnlyList<OptionItemDto> Categories,
+    IReadOnlyList<OptionItemDto> Channels,
+    IReadOnlyList<ChannelGroupDto> ChannelGroups,
+    IReadOnlyList<OptionItemDto> Consumers,
+    IReadOnlyList<OptionItemDto> Accounts,
+    IReadOnlyList<OptionItemDto> Tags);
+
+public record OptionAddRequest(string Kind, string Name, string? Parent);
+
+public record TagRuleDto(long Id, string Keyword, string Tag);
+public record TagRuleRequest(string Keyword, string Tag);
+
+/* ------------------------- 报表 ------------------------- */
+
+public record CategoryStatDto(string Name, long Amount, long Count, double Percent);
+
+public record DayPointDto(string Date, long Income, long Expense);
+
+public record ReportDto(
+    long Income,
+    long Expense,
+    long Balance,
+    long Count,
+    IReadOnlyList<CategoryStatDto> Categories,
+    IReadOnlyList<CategoryStatDto> IncomeCategories,
+    IReadOnlyList<DayPointDto> Days);
+
+/* ------------------------- 概览 ------------------------- */
+
+public record OverviewDto(long TodayExpense, long TodayIncome, long MonthExpense, long MonthIncome, long EntryCount);

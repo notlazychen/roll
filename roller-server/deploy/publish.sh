@@ -33,7 +33,7 @@ echo "==> 产物大小"
 du -sh "$OUT_DIR"
 
 if [[ -n "${DEPLOY_HOST:-}" ]]; then
-  REMOTE_DIR="${DEPLOY_DIR:-/opt/random-group/app}"
+  REMOTE_DIR="${DEPLOY_DIR:-/opt/ledger/app}"
   echo "==> 同步到 $DEPLOY_HOST:$REMOTE_DIR"
   # 注意：不会删除服务器上的 app.env（环境变量文件不在 publish 目录里）
   rsync -avz --delete \

@@ -4,17 +4,22 @@ using RandomGroup.Api.Contracts;
 using RandomGroup.Api.Data;
 using RandomGroup.Api.Domain;
 using RandomGroup.Api.Infrastructure;
+using RandomGroup.Api.Services;
 using static RandomGroup.Api.Contracts.TimeMs;
 
 namespace RandomGroup.Api.Features;
 
+/// <summary>
+/// 微信登录只拿 code。昵称与头像走客户端现成的 userProfile，
+/// 因为 wx.getUserProfile / chooseAvatar 由客户端授权后直接给出。
+/// </summary>
 public record WeChatLoginRequest(string Code, string? NickName, string? AvatarUrl);
 /// <summary>
 /// 开发模式登录。deviceKey 是稳定标识（客户端生成并保存在本地），
 /// 用它而不是昵称来生成 openid —— 这样改昵称不会变成另一个账号。
 /// </summary>
 public record DevLoginRequest(string NickName, string? DeviceKey);
-public record UpdateProfileRequest(string NickName, string? AvatarUrl);
+public record UpdateProfileRequest(string? NickName, string? AvatarUrl, bool? TagAutoEnabled);
 
 public static class AuthEndpoints
 {
@@ -41,11 +46,11 @@ public static class AuthEndpoints
 
             if (user is null)
             {
-                user = new RollUser
+                user = new LedgerUser
                 {
                     OpenId = session.OpenId,
                     UnionId = session.UnionId,
-                    NickName = string.IsNullOrWhiteSpace(req.NickName) ? DeviceDefaultNick() : req.NickName.Trim(),
+                    NickName = string.IsNullOrWhiteSpace(req.NickName) ? DefaultNick() : req.NickName.Trim(),
                     AvatarUrl = req.AvatarUrl,
                     CreatedAt = now,
                     LastLoginAt = now
@@ -66,13 +71,12 @@ public static class AuthEndpoints
             {
                 ok = true,
                 token = tokens.Create(user),
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount),
-                isNew,
-                needNickName = string.IsNullOrWhiteSpace(req.NickName) && isNew
+                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount, user.TagAutoEnabled),
+                isNew
             });
         }).AllowAnonymous();
 
-        // 开发模式登录：仅在 Development 环境且显式打开开关时可用，用于本地验证多人流程
+        // 开发模式登录：仅在 Development 环境且显式打开开关时可用，用于本地联调
         auth.MapPost("/dev", async (
             DevLoginRequest req,
             RollDbContext db,
@@ -84,7 +88,7 @@ public static class AuthEndpoints
             if (!env.IsDevelopment() || !authOptions.Value.AllowDevLogin)
                 throw ApiException.Forbidden("当前环境不允许开发模式登录");
 
-            var nick = string.IsNullOrWhiteSpace(req.NickName) ? "测试成员" : req.NickName.Trim();
+            var nick = string.IsNullOrWhiteSpace(req.NickName) ? "记账用户" : req.NickName.Trim();
             if (nick.Length > 16) throw ApiException.BadRequest("昵称最多 16 个字符");
 
             var deviceKey = string.IsNullOrWhiteSpace(req.DeviceKey) ? nick : req.DeviceKey.Trim();
@@ -96,7 +100,7 @@ public static class AuthEndpoints
             var user = await db.Users.FirstOrDefaultAsync(u => u.OpenId == openId, ct);
             if (user is null)
             {
-                user = new RollUser
+                user = new LedgerUser
                 {
                     OpenId = openId,
                     NickName = nick,
@@ -115,37 +119,39 @@ public static class AuthEndpoints
 
             await db.SaveChangesAsync(ct);
 
-            // 已加入小队里的显示名跟着改，避免出现两个名字
-            await db.Members.Where(m => m.UserId == user.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(m => m.Name, nick), ct);
-            await db.Groups.Where(g => g.OwnerId == user.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(g => g.OwnerName, nick), ct);
-
             return Results.Json(new
             {
                 ok = true,
                 token = tokens.Create(user),
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount),
+                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount, user.TagAutoEnabled),
                 isNew = false,
                 dev = true
             });
         }).AllowAnonymous();
 
-        // 当前登录用户
+        // 当前登录用户 + 我的记账概览
         app.MapGet("/api/me", async (HttpContext ctx, RollDbContext db, CancellationToken ct) =>
         {
             var uid = ctx.User.GetUserId();
             var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == uid, ct)
                 ?? throw ApiException.Unauthorized("账号不存在，请重新登录");
 
+            var total = await db.Entries.AsNoTracking().CountAsync(e => e.UserId == uid, ct);
+            var firstAt = await db.Entries.AsNoTracking()
+                .Where(e => e.UserId == uid)
+                .OrderBy(e => e.CreatedAt)
+                .Select(e => (DateTimeOffset?)e.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+
             return Results.Json(new
             {
                 ok = true,
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount)
+                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount, user.TagAutoEnabled),
+                stats = new { entryCount = total, firstRecordAt = firstAt.ToMs() }
             });
         }).WithTags("认证");
 
-        // 修改昵称/头像：同步更新已加入小队里的显示名与小队长名称
+        // 修改昵称 / 头像 / 标签自动识别开关
         app.MapPut("/api/me", async (
             UpdateProfileRequest req,
             HttpContext ctx,
@@ -153,48 +159,44 @@ public static class AuthEndpoints
             CancellationToken ct) =>
         {
             var uid = ctx.User.GetUserId();
-            var nick = (req.NickName ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(nick)) throw ApiException.BadRequest("昵称不能为空");
-            if (nick.Length > 16) throw ApiException.BadRequest("昵称最多 16 个字符");
-
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == uid, ct)
                 ?? throw ApiException.Unauthorized("账号不存在，请重新登录");
 
-            user.NickName = nick;
-            if (req.AvatarUrl is not null) user.AvatarUrl = string.IsNullOrWhiteSpace(req.AvatarUrl) ? null : req.AvatarUrl;
+            if (req.NickName is not null)
+            {
+                var nick = req.NickName.Trim();
+                if (nick.Length == 0) throw ApiException.BadRequest("昵称不能为空");
+                if (nick.Length > 16) throw ApiException.BadRequest("昵称最多 16 个字符");
+                user.NickName = nick;
+            }
 
-            await db.Members.Where(m => m.UserId == uid)
-                .ExecuteUpdateAsync(s => s.SetProperty(m => m.Name, nick), ct);
-            await db.Groups.Where(g => g.OwnerId == uid)
-                .ExecuteUpdateAsync(s => s.SetProperty(g => g.OwnerName, nick), ct);
+            if (req.AvatarUrl is not null)
+                user.AvatarUrl = string.IsNullOrWhiteSpace(req.AvatarUrl) ? null : req.AvatarUrl;
+
+            if (req.TagAutoEnabled.HasValue)
+                user.TagAutoEnabled = req.TagAutoEnabled.Value;
 
             await db.SaveChangesAsync(ct);
 
             return Results.Json(new
             {
                 ok = true,
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount)
+                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount, user.TagAutoEnabled)
             });
         }).WithTags("认证");
 
-        // 我的统计：已加入小队数与我创建的小队数
-        app.MapGet("/api/me/stats", async (HttpContext ctx, RollDbContext db, CancellationToken ct) =>
+        // 标签识别规则列表（配合「标签管理」页展示与删除）
+        app.MapGet("/api/tag-rules", async (HttpContext ctx, RollDbContext db, CancellationToken ct) =>
         {
             var uid = ctx.User.GetUserId();
-
-            var joined = await (
-                from m in db.Members.AsNoTracking()
-                join g in db.Groups.AsNoTracking() on m.GroupId equals g.Id
-                where m.UserId == uid
-                select m.Id
-            ).CountAsync(ct);
-
-            var owned = await db.Groups.AsNoTracking().CountAsync(g => g.OwnerId == uid, ct);
-
-            return Results.Json(new { ok = true, stats = new StatsDto(joined, owned) });
-        }).WithTags("认证");
+            var rules = await db.TagRules.AsNoTracking()
+                .Where(r => r.UserId == uid)
+                .OrderBy(r => r.Id)
+                .Select(r => new { r.Id, r.Keyword, r.Tag })
+                .ToListAsync(ct);
+            return Results.Json(new { ok = true, rules });
+        }).WithTags("选项源");
     }
 
-    private static string DeviceDefaultNick()
-        => "成员" + Random.Shared.Next(1000, 10000);
+    private static string DefaultNick() => "记账" + Random.Shared.Next(1000, 10000);
 }

@@ -8,9 +8,8 @@
 
 const config = require('./config')
 
-const TOKEN_KEY = 'rg_token_v2'
-const USER_KEY = 'rg_user_v2'
-const DEV_IDS_KEY = 'rg_dev_identities_v2'
+const TOKEN_KEY = 'lg_token_v1'
+const USER_KEY = 'lg_user_v1'
 
 /* ------------------------- 本地缓存 ------------------------- */
 
@@ -30,17 +29,7 @@ function setUser(user) {
   try { wx.setStorageSync(USER_KEY, user || null) } catch (e) {}
 }
 
-function getDevIdentities() {
-  try {
-    const v = wx.getStorageSync(DEV_IDS_KEY)
-    return Array.isArray(v) ? v : []
-  } catch (e) { return [] }
-}
-
-function setDevIdentities(list) {
-  try { wx.setStorageSync(DEV_IDS_KEY, list || []) } catch (e) {}
-}
-
+/** 退出登录：只清本机登录态，云端账目不受影响 */
 function clearSession() {
   try {
     wx.removeStorageSync(TOKEN_KEY)
@@ -119,15 +108,20 @@ function storeLoginResult(body) {
 }
 
 /** 用微信 code 换服务端 token */
-async function loginByWeChat(code) {
-  const res = await rawRequest('POST', '/api/auth/wechat', { code: code }, false)
+async function loginByWeChat(code, profile) {
+  const p = profile || {}
+  const res = await rawRequest('POST', '/api/auth/wechat', {
+    code: code,
+    nickName: p.nickName || '',
+    avatarUrl: p.avatarUrl || ''
+  }, false)
   if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
     return { ok: true, user: storeLoginResult(res.data), body: res.data }
   }
   return toError(res, '微信登录失败')
 }
 
-/** 开发模式登录（仅本地调试用，服务端默认只在 Development 环境开放） */
+/** 开发模式登录（仅本地调试用，服务端只在 Development 环境开放） */
 async function loginByDev(nickName, deviceKey) {
   if (!config.allowDevLogin) return { ok: false, error: '当前环境未开启开发模式登录' }
   const res = await rawRequest('POST', '/api/auth/dev', {
@@ -161,7 +155,11 @@ function ensureLogin(force) {
     try {
       const code = await wxLogin()
       if (code) {
-        const r = await loginByWeChat(code)
+        const cached = getUser() || {}
+        const r = await loginByWeChat(code, {
+          nickName: cached.nickName || '',
+          avatarUrl: cached.avatarUrl || ''
+        })
         if (r.ok) return r.user
         lastError = r.error
       } else {
@@ -175,7 +173,8 @@ function ensureLogin(force) {
       const cached = getUser()
       const nick = (cached && cached.devName) || '本机用户'
       // deviceKey 稳定不变，保证改昵称不会变成另一个账号
-      const key = (cached && cached.devKey) || ('local-' + randomKey())
+      const key = wx.getStorageSync('lg_dev_key_v1') || ('local-' + randomKey())
+      try { wx.setStorageSync('lg_dev_key_v1', key) } catch (e) {}
       const r = await loginByDev(nick, key)
       if (r.ok) {
         const u = {}
@@ -195,13 +194,13 @@ function ensureLogin(force) {
   return loginPromise
 }
 
+/** 主动登出：清掉本机 token，下次进入会重新走微信登录 */
 function logout() {
   clearSession()
 }
 
 /* ------------------------- 节流提示 ------------------------- */
 
-// 小队页每秒轮询，服务端挂掉时不能每秒弹一次 toast，同一个错误 5 秒内只提示一次
 let lastToast = { msg: '', at: 0 }
 
 function toastOnce(msg) {
@@ -240,7 +239,18 @@ async function callValue(method, path, data, fallback) {
     toastOnce(res.error)
     return fallback
   }
-  return res
+  return res || fallback
+}
+
+/** 组装查询串，自动跳过空值 */
+function qs(params) {
+  const parts = []
+  Object.keys(params || {}).forEach(function (k) {
+    const v = params[k]
+    if (v === undefined || v === null || v === '') return
+    parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v))
+  })
+  return parts.length ? '?' + parts.join('&') : ''
 }
 
 module.exports = {
@@ -248,8 +258,6 @@ module.exports = {
   getToken,
   getUser,
   setUser,
-  getDevIdentities,
-  setDevIdentities,
   clearSession,
   logout,
   ensureLogin,
@@ -258,6 +266,7 @@ module.exports = {
   randomKey,
   call,
   callValue,
+  qs,
   toastOnce,
   rawRequest
 }

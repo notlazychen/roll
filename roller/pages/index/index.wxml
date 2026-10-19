@@ -1,170 +1,155 @@
 <view class="page">
 
-  <!-- 顶部标题 + 操作 -->
-  <view class="hero">
-    <view class="hero-row">
+  <!-- ============ 顶部：本月概览 ============ -->
+  <view class="summary">
+    <view class="summary-top">
       <view class="flex1">
-        <view class="hero-title">冒险者大厅</view>
-        <view class="hero-sub">创建或加入小队，让命运来替你决定</view>
+        <view class="summary-label">{{monthLabel}} 支出</view>
+        <view class="summary-amount num">￥{{overview.monthExpenseText}}</view>
       </view>
-      <view class="icon-btn" bindtap="goMessages">
-        <text class="icon">🔔</text>
-        <view class="badge" wx:if="{{unread > 0}}">{{unread > 99 ? '99+' : unread}}</view>
-      </view>
-      <view class="icon-btn" bindtap="goMe">
-        <text class="icon">👤</text>
+      <view class="summary-income" bindtap="goCharts">
+        <view class="summary-label">本月收入</view>
+        <view class="summary-income-num num">￥{{overview.monthIncomeText}}</view>
       </view>
     </view>
 
+    <view class="summary-foot">
+      <view class="summary-pill">
+        <text class="summary-pill-label">今日支出</text>
+        <text class="num">￥{{overview.todayExpenseText}}</text>
+      </view>
+      <view class="summary-pill">
+        <text class="summary-pill-label">今日收入</text>
+        <text class="num">￥{{overview.todayIncomeText}}</text>
+      </view>
+      <view class="summary-more" bindtap="goCharts">看图表 ›</view>
+    </view>
+  </view>
+
+  <!-- ============ 搜索与筛选 ============ -->
+  <view class="toolbar">
     <view class="search">
       <text class="search-icon">🔍</text>
       <input
         class="search-input"
         value="{{keyword}}"
-        placeholder="搜索小队主题 / 6 位小队号"
+        placeholder="搜索备注 / 渠道 / 账户"
         placeholder-class="ph"
         confirm-type="search"
         bindinput="onKeyword"
-        bindconfirm="doSearch"
+        bindconfirm="applyFilter"
       />
       <view class="search-clear" wx:if="{{keyword}}" catchtap="clearKeyword">✕</view>
-      <view class="search-btn" bindtap="doSearch">搜索</view>
+    </view>
+    <view class="filter-btn {{filterActive ? 'filter-btn-on' : ''}}" bindtap="toggleFilter">
+      <text>筛选</text>
+      <text class="filter-dot" wx:if="{{filterActive}}"></text>
     </view>
   </view>
 
-  <!-- 未登录引导 -->
-  <view class="login-tip" wx:if="{{loginError && !loading}}" bindtap="goMe">
+  <!-- 筛选面板 -->
+  <view class="filter-panel" wx:if="{{showFilter}}">
+    <view class="filter-row">
+      <view
+        class="seg-item {{filter.type === '' ? 'seg-on' : ''}}"
+        data-type=""
+        bindtap="onFilterType"
+      >全部</view>
+      <view
+        class="seg-item {{filter.type === 'expense' ? 'seg-on' : ''}}"
+        data-type="expense"
+        bindtap="onFilterType"
+      >支出</view>
+      <view
+        class="seg-item {{filter.type === 'income' ? 'seg-on' : ''}}"
+        data-type="income"
+        bindtap="onFilterType"
+      >收入</view>
+    </view>
+
+    <scroll-view class="filter-scroll" scroll-x enable-flex>
+      <view class="chip {{filter.category === '' ? 'chip-on' : ''}}" data-cat="" bindtap="onFilterCategory">全部分类</view>
+      <view
+        wx:for="{{options.categories}}"
+        wx:key="id"
+        class="chip {{filter.category === item.name ? 'chip-on' : ''}}"
+        data-cat="{{item.name}}"
+        bindtap="onFilterCategory"
+      >{{item.icon}} {{item.name}}</view>
+    </scroll-view>
+
+    <view class="filter-foot">
+      <view class="btn btn-plain btn-sm" bindtap="resetFilter">重置</view>
+      <view class="btn btn-primary btn-sm flex1" style="margin-left:16rpx;" bindtap="applyFilter">应用筛选</view>
+    </view>
+  </view>
+
+  <!-- ============ 未登录提示 ============ -->
+  <view class="login-tip" wx:if="{{!loggedIn && !loading}}" bindtap="goMe">
     <text class="login-tip-icon">🔑</text>
     <view class="flex1">
       <view class="login-tip-title">还没有登录</view>
-      <view class="login-tip-sub">{{loginError}}</view>
+      <view class="login-tip-sub">登录后才能记账，账目会按微信账号隔离</view>
     </view>
-    <text class="login-tip-go">去登录 ›</text>
+    <text class="login-tip-arrow">›</text>
   </view>
 
-  <!-- 小队列表 -->
-  <view class="list-wrap">
-    <view class="grid" wx:if="{{groups.length > 0}}">
-      <view
-        class="gcard"
-        wx:for="{{groups}}"
-        wx:key="id"
-        style="background: {{item.tint}};"
-        data-id="{{item.id}}"
-        bindtap="onTapGroup"
-      >
-        <!-- 左上角：口令锁 -->
-        <view class="lock" wx:if="{{item.hasPasscode}}">🔒</view>
-        <view class="lock-empty" wx:else></view>
-
-        <!-- 主题：最大幅展示 -->
-        <view class="gtheme" style="color: {{item.ink}};">{{item.theme}}</view>
-
-        <!-- 底部信息 -->
-        <view class="gfoot">
-          <view class="gfoot-left">
-            <text class="gcode">#{{item.code}}</text>
-            <view class="gtag" wx:if="{{item.stageText}}">{{item.stageText}}</view>
-            <view class="gtag gtag-mine" wx:elif="{{item.isLeader}}">队长</view>
-          </view>
-          <text class="gcount">{{item.memberCount}}/20</text>
+  <!-- ============ 明细列表 ============ -->
+  <block wx:if="{{loggedIn}}">
+    <view class="list" wx:if="{{groups.length > 0}}">
+      <view class="group" wx:for="{{groups}}" wx:for-item="g" wx:key="key">
+        <view class="group-head">
+          <text class="group-title">{{g.label}}</text>
+          <text class="group-sum num">{{g.summary}}</text>
         </view>
 
-        <view class="gjoined" wx:if="{{item.joined}}">已加入</view>
+        <view class="group-body">
+          <view
+            class="entry"
+            wx:for="{{g.items}}"
+            wx:for-item="e"
+            wx:key="id"
+            data-id="{{e.id}}"
+            bindtap="openEntry"
+          >
+            <view class="entry-icon">{{e.icon}}</view>
+            <view class="flex1 entry-main">
+              <view class="entry-line1">
+                <text class="entry-cat">{{e.category}}</text>
+                <text class="entry-channel" wx:if="{{e.channel}}">· {{e.channel}}</text>
+              </view>
+              <view class="entry-line2">
+                <text class="entry-time">{{e.timeText}}</text>
+                <text wx:if="{{e.consumer}}"> · {{e.consumer}}</text>
+                <text wx:if="{{e.account}}"> · {{e.account}}</text>
+                <text wx:if="{{e.remark}}" class="entry-remark"> · {{e.remark}}</text>
+              </view>
+              <view class="entry-tags" wx:if="{{e.tags.length > 0}}">
+                <text class="tag" wx:for="{{e.tags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+              </view>
+            </view>
+            <view class="entry-amount num {{e.isIncome ? 'income-text' : ''}}">{{e.signedText}}</view>
+          </view>
+        </view>
       </view>
     </view>
 
-    <view class="empty" wx:elif="{{!loading && !loginError}}">
-      <view class="empty-icon">🎲</view>
-      <view class="t-sub">{{keyword ? '没有找到匹配的小队' : '还没有任何小队'}}</view>
-      <view class="t-muted mt8">{{keyword ? '换个关键词试试' : '点击下方按钮，创建第一个小队'}}</view>
+    <view class="empty" wx:if="{{!loading && groups.length === 0}}">
+      <view class="empty-icon">📒</view>
+      <view class="t-sub">{{filterActive || keyword ? '没有符合条件的账目' : '还没有账目，点右下角记第一笔'}}</view>
     </view>
-  </view>
 
-  <view class="bottom-space"></view>
+    <view class="load-more" wx:if="{{groups.length > 0}}">
+      <text wx:if="{{loadingMore}}">加载中…</text>
+      <text wx:elif="{{hasMore}}" bindtap="loadMore">加载更多</text>
+      <text wx:else class="t-tiny">{{total > 0 ? '共 ' + total + ' 笔 · ' : ''}}没有更多了</text>
+    </view>
+  </block>
 
-  <!-- 创建按钮 -->
-  <view class="fab" bindtap="openCreate">
+  <view class="bottom-space" style="height: 180rpx;"></view>
+
+  <!-- ============ 悬浮记账按钮 ============ -->
+  <view class="fab" wx:if="{{loggedIn}}" bindtap="addEntry">
     <text class="fab-plus">＋</text>
-    <text>创建小队</text>
   </view>
-
-  <!-- ============ 创建小队 ============ -->
-  <view class="mask" wx:if="{{showCreate}}" catchtap="closeCreate">
-    <view class="dialog" catchtap="noop">
-      <view class="t-title">创建小队</view>
-      <view class="t-muted mt8">设置一个主题，创建后你将成为小队长</view>
-
-      <view class="field mt24">
-        <view class="field-label">
-          <text>小队主题</text>
-          <text class="t-tiny">{{cTheme.length}}/10</text>
-        </view>
-        <input
-          class="input"
-          value="{{cTheme}}"
-          maxlength="10"
-          placeholder="例如：今天吃什么"
-          placeholder-class="ph"
-          bindinput="onCTheme"
-        />
-      </view>
-
-      <view class="field mt20">
-        <view class="row-between">
-          <view class="field-label" style="margin-bottom:0;">
-            <text>小队口令</text>
-          </view>
-          <switch checked="{{cUsePass}}" color="#6D5BF6" bindchange="onTogglePass" />
-        </view>
-        <view class="t-muted mt8">开启后，成员需输入 5 位数字口令才能加入</view>
-        <input
-          wx:if="{{cUsePass}}"
-          class="input mt12"
-          type="number"
-          value="{{cPasscode}}"
-          maxlength="5"
-          placeholder="请输入 5 位数字"
-          placeholder-class="ph"
-          bindinput="onCPasscode"
-        />
-      </view>
-
-      <view class="dialog-btns mt32">
-        <view class="btn btn-plain flex1" bindtap="closeCreate">取消</view>
-        <view class="btn btn-primary flex1" bindtap="submitCreate">创建</view>
-      </view>
-    </view>
-  </view>
-
-  <!-- ============ 加入小队 ============ -->
-  <view class="mask" wx:if="{{showJoin}}" catchtap="closeJoin">
-    <view class="dialog" catchtap="noop">
-      <view class="t-title">加入小队</view>
-      <view class="join-theme mt16">「{{joinTarget.theme}}」</view>
-      <view class="t-muted mt8">当前 {{joinTarget.memberCount}}/20 人</view>
-
-      <block wx:if="{{joinTarget.hasPasscode}}">
-        <view class="field mt24">
-          <view class="field-label"><text>小队口令</text><text class="t-tiny">🔒 需要口令</text></view>
-          <input
-            class="input"
-            type="number"
-            value="{{joinPasscode}}"
-            maxlength="5"
-            placeholder="请输入 5 位数字口令"
-            placeholder-class="ph"
-            bindinput="onJoinPasscode"
-          />
-        </view>
-      </block>
-      <view class="join-hint mt16" wx:else>该小队无需口令，确认即可加入</view>
-
-      <view class="dialog-btns mt32">
-        <view class="btn btn-plain flex1" bindtap="closeJoin">取消</view>
-        <view class="btn btn-primary flex1" bindtap="submitJoin">加入</view>
-      </view>
-    </view>
-  </view>
-
 </view>

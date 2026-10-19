@@ -1,207 +1,217 @@
 const store = require('../../utils/store')
 const util = require('../../utils/util')
 
-// 卡片柔和底色 / 主题文字色（浅色主题）
-const TINTS = ['#EEEAFF', '#FFEAF3', '#FFF4E3', '#E7F8EF', '#E6F4FE', '#F3EAFF', '#FFECEC', '#E3F7F4']
-const INKS = ['#5B47E0', '#D6437B', '#C97A12', '#1E9E5A', '#1E86C9', '#7B3FD4', '#D94144', '#0E9384']
-
-const STAGE_TEXT = {
-  preparing: '准备中',
-  rolling: '随机中',
-  result: '已出结果'
-}
+const PAGE_SIZE = 30
 
 Page({
   data: {
-    me: null,
-    groups: [],
-    keyword: '',
-    unread: 0,
+    loggedIn: false,
     loading: true,
-    // 未登录时给出的提示文案；为空表示登录正常
-    loginError: '',
+    loadingMore: false,
 
-    showCreate: false,
-    cTheme: '',
-    cUsePass: false,
-    cPasscode: '',
+    overview: {
+      monthExpenseText: '0.00',
+      monthIncomeText: '0.00',
+      todayExpenseText: '0.00',
+      todayIncomeText: '0.00'
+    },
+    monthLabel: '',
 
-    showJoin: false,
-    joinTarget: null,
-    joinPasscode: ''
+    // 列表按日期分组
+    groups: [],
+    hasMore: false,
+    nextCursor: null,
+    loadedCount: 0,
+    total: 0,
+
+    // 筛选
+    keyword: '',
+    showFilter: false,
+    filter: { type: '', category: '' },
+    filterActive: false,
+    options: { categories: [] }
   },
 
   onLoad() {
-    this.refresh()
+    this.setData({ monthLabel: util.monthLabel(Date.now()) })
   },
 
   onShow() {
+    // 从记账页回来时脏标记为真，需要整体刷新
+    if (this._loaded && !getApp().globalData.dirty) return
+    this._loaded = true
+    getApp().globalData.dirty = false
     this.refresh()
   },
 
   onPullDownRefresh() {
-    this.refresh(function () {
-      wx.stopPullDownRefresh()
+    this.refresh(function () { wx.stopPullDownRefresh() })
+  },
+
+  onReachBottom() {
+    if (this.data.hasMore && !this.data.loadingMore) this.loadMore()
+  },
+
+  /* ------------------------- 加载 ------------------------- */
+
+  async refresh(done) {
+    this.setData({ loading: true })
+
+    let loggedIn = store.isLoggedIn()
+    if (!loggedIn) {
+      try {
+        await store.ensureLogin()
+        loggedIn = store.isLoggedIn()
+      } catch (e) {
+        loggedIn = false
+      }
+    }
+
+    if (!loggedIn) {
+      this.setData({ loggedIn: false, loading: false, groups: [] })
+      if (done) done()
+      return
+    }
+
+    // 选项源只用于筛选条，与列表并行拉取
+    const that = this
+    await Promise.all([
+      this.loadFirstPage(),
+      this.loadOverview(),
+      store.loadOptions().then(function (o) { that.setData({ options: o }) })
+    ])
+
+    this.setData({ loggedIn: true, loading: false })
+    if (done) done()
+  },
+
+  async loadOverview() {
+    const o = await store.overview()
+    this.setData({
+      overview: {
+        monthExpenseText: util.money(o.monthExpense || 0),
+        monthIncomeText: util.money(o.monthIncome || 0),
+        todayExpenseText: util.money(o.todayExpense || 0),
+        todayIncomeText: util.money(o.todayIncome || 0)
+      },
+      monthLabel: util.monthLabel(Date.now())
     })
   },
 
-  /* ---------------- 数据 ---------------- */
-
-  async refresh(done) {
-    try {
-      // 大厅需要登录态。云端登录是静默的（不弹授权框）；
-      // 若应用还没开启微信登录，这里会失败，页面给出「去登录」引导。
-      let loginError = ''
-      try {
-        await store.ensureLogin()
-      } catch (e) {
-        loginError = (e && e.message) || '需要登录后才能使用'
-      }
-
-      const me = store.getMe()
-      let groups = []
-      let unread = 0
-      if (!loginError) {
-        groups = await store.listGroups(this.data.keyword)
-        unread = await store.unreadCount()
-      }
-
-      const list = []
-      for (let i = 0; i < groups.length; i++) {
-        const g = groups[i]
-        list.push({
-          id: g.id,
-          code: g.code,
-          theme: g.theme,
-          stage: g.stage,
-          stageText: STAGE_TEXT[g.stage] || '',
-          memberCount: g.memberCount,
-          hasPasscode: g.hasPasscode,
-          // 数据源在同一份列表里就返回了「我是否已加入 / 我是否是队长」
-          isLeader: !!g.owner,
-          joined: !!g.joined,
-          tint: TINTS[i % TINTS.length],
-          ink: INKS[i % INKS.length]
-        })
-      }
-
-      this.setData({
-        me: me,
-        groups: list,
-        unread: unread,
-        loginError: loginError,
-        loading: false
-      })
-    } catch (e) {
-      this.setData({ loading: false })
-      util.toast('加载失败，请重试')
-    }
-    if (typeof done === 'function') done()
+  currentFilter() {
+    const f = this.data.filter
+    return { type: f.type, category: f.category, keyword: this.data.keyword }
   },
 
-  /* ---------------- 搜索 ---------------- */
+  async loadFirstPage() {
+    const res = await store.listEntries(this.currentFilter(), null, PAGE_SIZE)
+    this._items = res.items
+    this.setData({
+      groups: groupByDay(res.items),
+      hasMore: res.hasMore,
+      nextCursor: res.nextCursor,
+      loadedCount: res.items.length,
+      // 首页加载时先按「已取到的条数」显示；还有下一页就说明不止这些
+      total: res.hasMore ? -1 : res.items.length
+    })
+  },
+
+  async loadMore() {
+    this.setData({ loadingMore: true })
+    const res = await store.listEntries(this.currentFilter(), this.data.nextCursor, PAGE_SIZE)
+    this._items = (this._items || []).concat(res.items)
+    this.setData({
+      groups: groupByDay(this._items),
+      hasMore: res.hasMore,
+      nextCursor: res.nextCursor,
+      loadedCount: this._items.length,
+      loadingMore: false,
+      total: res.hasMore ? -1 : this._items.length
+    })
+  },
+
+  /* ------------------------- 筛选 ------------------------- */
 
   onKeyword(e) {
     this.setData({ keyword: e.detail.value })
   },
 
-  doSearch() {
-    this.refresh()
-  },
-
   clearKeyword() {
-    this.setData({ keyword: '' }, () => this.refresh())
+    this.setData({ keyword: '' })
+    this.reload()
   },
 
-  /* ---------------- 创建小队 ---------------- */
-
-  openCreate() {
-    this.setData({ showCreate: true, cTheme: '', cUsePass: false, cPasscode: '' })
+  toggleFilter() {
+    this.setData({ showFilter: !this.data.showFilter })
   },
 
-  closeCreate() {
-    this.setData({ showCreate: false })
+  onFilterType(e) {
+    this.setData({ 'filter.type': e.currentTarget.dataset.type })
   },
 
-  onCTheme(e) {
-    this.setData({ cTheme: e.detail.value })
+  onFilterCategory(e) {
+    this.setData({ 'filter.category': e.currentTarget.dataset.cat })
   },
 
-  onTogglePass(e) {
-    const on = e.detail.value
-    this.setData({ cUsePass: on, cPasscode: on ? this.data.cPasscode : '' })
+  applyFilter() {
+    this.setData({ showFilter: false })
+    this.reload()
   },
 
-  onCPasscode(e) {
-    this.setData({ cPasscode: String(e.detail.value).replace(/\D/g, '').slice(0, 5) })
+  resetFilter() {
+    this.setData({ filter: { type: '', category: '' }, keyword: '' })
+    this.reload()
   },
 
-  async submitCreate() {
-    const theme = String(this.data.cTheme || '').trim()
-    if (!theme) return util.toast('请填写小队主题')
-    if (theme.length > store.MAX_THEME) return util.toast('主题最多 10 个字符')
-    if (this.data.cUsePass && !/^\d{5}$/.test(this.data.cPasscode)) {
-      return util.toast('口令必须是 5 位数字')
-    }
-    const res = await store.createGroup({
-      theme: theme,
-      passcode: this.data.cUsePass ? this.data.cPasscode : ''
-    })
-    if (!res.ok) return util.toast(res.error || '创建失败')
+  async reload() {
+    const f = this.data.filter
+    const active = !!(f.type || f.category || this.data.keyword)
+    this.setData({ filterActive: active, loading: true, nextCursor: null })
+    await this.loadFirstPage()
+    this.setData({ loading: false })
+  },
+
+  /* ------------------------- 跳转 ------------------------- */
+
+  addEntry() {
     util.haptic()
-    this.setData({ showCreate: false })
-    wx.navigateTo({ url: '/pages/group/group?id=' + res.group.id })
+    wx.navigateTo({ url: '/pages/entry/entry' })
   },
 
-  /* ---------------- 加入小队 ---------------- */
-
-  async onTapGroup(e) {
+  openEntry(e) {
     const id = e.currentTarget.dataset.id
-    const me = store.getMe()
-    const joined = await store.isMember(id, me.uid)
-    if (joined) {
-      wx.navigateTo({ url: '/pages/group/group?id=' + id })
-      return
-    }
-    const g = await store.getGroup(id)
-    if (!g) return util.toast('小队不存在')
-    this.setData({ showJoin: true, joinTarget: g, joinPasscode: '' })
+    wx.navigateTo({ url: '/pages/entry/entry?id=' + id })
   },
 
-  closeJoin() {
-    this.setData({ showJoin: false, joinTarget: null })
-  },
-
-  onJoinPasscode(e) {
-    this.setData({ joinPasscode: String(e.detail.value).replace(/\D/g, '').slice(0, 5) })
-  },
-
-  async submitJoin() {
-    const g = this.data.joinTarget
-    if (!g) return
-    if (g.memberCount >= store.MAX_MEMBERS) {
-      return util.toast('小队人数已达上限（20 人）')
-    }
-    if (g.hasPasscode && !/^\d{5}$/.test(this.data.joinPasscode)) {
-      return util.toast('请输入 5 位数字口令')
-    }
-    const res = await store.joinGroup(g.id, { passcode: this.data.joinPasscode })
-    if (!res.ok) return util.toast(res.error || '加入失败')
-    util.haptic()
-    util.toast(res.already ? '你已在小队中' : '加入成功')
-    this.setData({ showJoin: false, joinTarget: null })
-    wx.navigateTo({ url: '/pages/group/group?id=' + g.id })
-  },
-
-  /* ---------------- 跳转 ---------------- */
-
-  goMessages() {
-    wx.navigateTo({ url: '/pages/messages/messages' })
+  goCharts() {
+    wx.switchTab({ url: '/pages/charts/charts' })
   },
 
   goMe() {
-    wx.navigateTo({ url: '/pages/me/me' })
-  },
-
-  noop() {}
+    wx.switchTab({ url: '/pages/me/me' })
+  }
 })
+
+/** 按「天」分组，并在组标题右侧显示当天收支 */
+function groupByDay(items) {
+  const out = []
+  const map = {}
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i]
+    const key = it.dateKey
+    if (!map[key]) {
+      map[key] = { key: key, label: it.dayLabel, items: [], income: 0, expense: 0 }
+      out.push(map[key])
+    }
+    map[key].items.push(it)
+    if (it.isIncome) map[key].income += it.amount
+    else map[key].expense += it.amount
+  }
+  out.forEach(function (g) {
+    const parts = []
+    if (g.expense > 0) parts.push('支出 ' + util.money(g.expense))
+    if (g.income > 0) parts.push('收入 ' + util.money(g.income))
+    g.summary = parts.join(' · ')
+  })
+  return out
+}
