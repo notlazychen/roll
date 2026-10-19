@@ -1,9 +1,7 @@
 {
-  "name": "random-squad",
+  "name": "ledger-miniprogram",
   "version": "1.0.0",
   "private": true,
-  "description": "随机小队 - 小队内随机抽取小程序",
-  "dependencies": {
-    "@tencent-ai/workbuddy-cloud-sdk": "dev"
-  }
+  "description": "记账本 - 收支明细、分类报表、选项源管理",
+  "dependencies": {}
 }

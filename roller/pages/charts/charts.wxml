@@ -1,0 +1,142 @@
+<view class="page">
+
+  <!-- ============ 区间切换 ============ -->
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tab {{tab === item.key ? 'tab-on' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onTab"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- 区间导航 -->
+  <view class="range">
+    <view class="range-nav" bindtap="prevRange">‹</view>
+    <view class="range-center">
+      <view class="range-label">{{rangeLabel}}</view>
+      <view class="range-sub">{{rangeSub}}</view>
+    </view>
+    <view class="range-nav {{canNext ? '' : 'range-nav-off'}}" bindtap="nextRange">›</view>
+  </view>
+
+  <!-- ============ 收支汇总 ============ -->
+  <view class="totals">
+    <view class="total-item">
+      <view class="total-label">支出</view>
+      <view class="total-num num expense-text">￥{{summary.expenseText}}</view>
+    </view>
+    <view class="total-line"></view>
+    <view class="total-item">
+      <view class="total-label">收入</view>
+      <view class="total-num num income-text">￥{{summary.incomeText}}</view>
+    </view>
+    <view class="total-line"></view>
+    <view class="total-item">
+      <view class="total-label">结余</view>
+      <view class="total-num num">￥{{summary.balanceText}}</view>
+    </view>
+  </view>
+
+  <!-- ============ 分类饼图 ============ -->
+  <view class="card-block">
+    <view class="row-between">
+      <text class="block-title">{{pieType === 'expense' ? '支出' : '收入'}}构成</text>
+      <view class="mini-switch">
+        <text
+          class="mini-item {{pieType === 'expense' ? 'mini-on' : ''}}"
+          data-type="expense"
+          bindtap="onPieType"
+        >支出</text>
+        <text
+          class="mini-item {{pieType === 'income' ? 'mini-on' : ''}}"
+          data-type="income"
+          bindtap="onPieType"
+        >收入</text>
+      </view>
+    </view>
+
+    <view class="pie-wrap" wx:if="{{pieItems.length > 0}}">
+      <view class="pie" style="{{pieStyle}}">
+        <view class="pie-hole">
+          <view class="pie-hole-label">合计</view>
+          <view class="pie-hole-num num">￥{{pieType === 'expense' ? summary.expenseText : summary.incomeText}}</view>
+        </view>
+      </view>
+
+      <view class="legend">
+        <view class="legend-item" wx:for="{{pieItems}}" wx:key="name">
+          <view class="legend-dot" style="background: {{item.color}};"></view>
+          <text class="legend-name">{{item.name}}</text>
+          <text class="legend-pct num">{{item.percentText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty" wx:else>
+      <view class="empty-icon">🍩</view>
+      <view class="t-sub">这段时间没有{{pieType === 'expense' ? '支出' : '收入'}}记录</view>
+    </view>
+
+    <!-- 分类明细条 -->
+    <view class="cat-list" wx:if="{{pieItems.length > 0}}">
+      <view class="cat-row" wx:for="{{pieItems}}" wx:key="name">
+        <view class="cat-dot" style="background: {{item.color}};"></view>
+        <view class="flex1">
+          <view class="row-between">
+            <text class="cat-name">{{item.name}}</text>
+            <text class="cat-amount num">￥{{item.amountText}}</text>
+          </view>
+          <view class="bar">
+            <view class="bar-in" style="width: {{item.percent * 100}}%; background: {{item.color}};"></view>
+          </view>
+          <view class="cat-meta">
+            <text>{{item.count}} 笔 · {{item.percentText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 每日折线图 ============ -->
+  <view class="card-block">
+    <view class="row-between">
+      <text class="block-title">每日收支</text>
+      <view class="legend-inline">
+        <view class="li"><view class="li-dot" style="background:#E8613C;"></view><text>支出</text></view>
+        <view class="li"><view class="li-dot" style="background:#1F9D6B;"></view><text>收入</text></view>
+      </view>
+    </view>
+
+    <view class="chart-box">
+      <canvas type="2d" id="lineChart" class="line-canvas"></canvas>
+      <view class="chart-empty" wx:if="{{!hasDayData}}">这段时间还没有账目</view>
+    </view>
+  </view>
+
+  <!-- ============ 渠道排行 ============ -->
+  <view class="card-block" wx:if="{{channels.length > 0}}">
+    <view class="row-between">
+      <text class="block-title">花得最多的渠道</text>
+      <text class="t-tiny">仅统计支出</text>
+    </view>
+    <view class="rank-row" wx:for="{{channels}}" wx:key="name">
+      <text class="rank-index">{{index + 1}}</text>
+      <view class="flex1">
+        <view class="row-between">
+          <text class="rank-name">{{item.shortName}}</text>
+          <text class="rank-amount num">￥{{item.amountText}}</text>
+        </view>
+        <view class="bar">
+          <view class="bar-in" style="width: {{item.ratio * 100}}%; background: #1F8A70;"></view>
+        </view>
+        <view class="cat-meta">
+          <text>{{item.percentText}} · {{item.count}} 笔</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-space"></view>
+</view>

@@ -1,9 +1,9 @@
 {
-  "description": "随机小队 - 小队内随机抽取小程序",
+  "description": "记账本 - 收支明细、分类报表、选项源管理",
   "miniprogramRoot": "./",
   "compileType": "miniprogram",
   "appid": "wx687f0c80abf51c82",
-  "projectname": "random-group",
+  "projectname": "ledger",
   "setting": {
     "urlCheck": false,
     "es6": true,
@@ -35,28 +35,28 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "folder",
-        "value": "tests"
+        "value": "tests",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": ".workbuddy"
+        "value": ".workbuddy",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": ".git"
+        "value": ".git",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "node_modules"
+        "value": "node_modules",
+        "type": "folder"
       },
       {
-        "type": "file",
-        "value": "package-lock.json"
+        "value": "package-lock.json",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "README.md"
+        "value": "README.md",
+        "type": "file"
       }
     ],
     "include": []

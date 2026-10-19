@@ -42,10 +42,8 @@ builder.Services.Configure<AuthOptions>(config.GetSection("Auth"));
 
 /* --------------------------- 业务服务 --------------------------- */
 
-builder.Services.AddScoped<WeightService>();
-builder.Services.AddScoped<NotificationService>();
-builder.Services.AddScoped<StageEngine>();
-builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<OptionSourceService>();
+builder.Services.AddScoped<TagService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddHttpClient<WeChatClient>(c => c.Timeout = TimeSpan.FromSeconds(10));
 
@@ -108,9 +106,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "随机小队 API",
+        Title = "记账 API",
         Version = "v1",
-        Description = "小队内「备选项 + 投票 → 准备确认 → 加权随机轮盘」抽取服务"
+        Description = "贴身小工具 · 记账：账目明细、收支报表、选项源维护"
     });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -176,10 +174,9 @@ if (config.GetValue("Database:AutoMigrate", false))
 
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapAuthEndpoints();
-app.MapGroupEndpoints();
+app.MapEntryEndpoints();
 app.MapOptionEndpoints();
-app.MapRollEndpoints();
-app.MapNotificationEndpoints();
+app.MapReportEndpoints();
 
 app.Run();
 

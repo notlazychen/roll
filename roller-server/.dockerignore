@@ -1,8 +1,11 @@
 **/bin/
 **/obj/
 **/Migrations/*.Designer.cs.bak
+
+# 本地开发配置含明文数据库口令，绝不能进镜像。
+# Production 那份只放日志级别、迁移开关这类不含密钥的项，必须打进去，
+# 否则容器里跑的是默认配置（日志级别、AutoMigrate 行为都会不对）。
 appsettings.Development.json
-appsettings.Production.json
 *.user
 
 # 以下都不是构建产物所需，排除以缩小构建上下文

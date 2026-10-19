@@ -1,0 +1,219 @@
+.page {
+  min-height: 100vh;
+  padding: 12rpx 24rpx 0;
+}
+
+/* ---------- 种类切换 ---------- */
+.tabs {
+  white-space: nowrap;
+  display: flex;
+  width: 100%;
+  padding: 4rpx 0;
+}
+
+.tab {
+  flex-shrink: 0;
+  padding: 0 24rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  font-size: 26rpx;
+  color: #5C645C;
+  background: #FFFFFF;
+  border-radius: 30rpx;
+  margin-right: 14rpx;
+}
+
+.tab-on {
+  background: #1F8A70;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* ---------- 头部 ---------- */
+.head {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 4rpx 16rpx;
+}
+
+.head-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1F2420;
+}
+
+.head-sub {
+  font-size: 21rpx;
+  color: #9AA096;
+  margin-top: 4rpx;
+}
+
+/* ---------- 渠道分组 ---------- */
+.group {
+  margin-bottom: 20rpx;
+}
+
+.group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8rpx 10rpx;
+}
+
+.group-title {
+  font-size: 23rpx;
+  font-weight: 600;
+  color: #5C645C;
+}
+
+.group-count {
+  font-size: 21rpx;
+  color: #9AA096;
+}
+
+.group-body,
+.list {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 0 24rpx;
+}
+
+/* ---------- 选项行 ---------- */
+.opt-row {
+  display: flex;
+  align-items: center;
+  min-height: 104rpx;
+  padding: 16rpx 0;
+  border-bottom: 2rpx solid #F3F4F1;
+}
+
+.opt-row:last-child {
+  border-bottom: none;
+}
+
+.opt-icon {
+  width: 48rpx;
+  font-size: 32rpx;
+  margin-right: 10rpx;
+}
+
+.opt-name {
+  font-size: 27rpx;
+  color: #1F2420;
+}
+
+.opt-meta {
+  display: flex;
+  align-items: center;
+  margin-top: 6rpx;
+  flex-wrap: wrap;
+}
+
+.opt-meta .tag {
+  height: 30rpx;
+  font-size: 19rpx;
+  margin: 0 10rpx 0 0;
+}
+
+.opt-used {
+  font-size: 20rpx;
+  color: #E8613C;
+}
+
+.opt-unused {
+  font-size: 20rpx;
+  color: #B4B9B0;
+}
+
+.opt-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+.opt-act {
+  font-size: 24rpx;
+  color: #1F8A70;
+  padding: 10rpx 14rpx;
+}
+
+.opt-del {
+  color: #E8613C;
+}
+
+.opt-empty {
+  padding: 32rpx 0;
+  text-align: center;
+  font-size: 23rpx;
+  color: #B4B9B0;
+}
+
+/* ---------- 规则 ---------- */
+.card-block {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-top: 20rpx;
+}
+
+.block-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1F2420;
+}
+
+.block-link {
+  font-size: 24rpx;
+  color: #1F8A70;
+}
+
+.rule-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid #F3F4F1;
+}
+
+.rule-row:last-child {
+  border-bottom: none;
+}
+
+.rule-kw {
+  font-size: 26rpx;
+  color: #1F2420;
+}
+
+.rule-tag {
+  display: flex;
+  align-items: center;
+  font-size: 22rpx;
+  color: #9AA096;
+  margin-top: 8rpx;
+}
+
+.rule-tag .tag {
+  margin-bottom: 0;
+}
+
+/* ---------- 弹层 ---------- */
+.parent-scroll {
+  white-space: nowrap;
+  display: flex;
+  width: 100%;
+  margin-top: 12rpx;
+}
+
+.parent-scroll .chip {
+  flex-shrink: 0;
+}
+
+.field {
+  margin-top: 20rpx;
+}
+
+.field-label {
+  font-size: 23rpx;
+  color: #9AA096;
+  margin-bottom: 12rpx;
+}

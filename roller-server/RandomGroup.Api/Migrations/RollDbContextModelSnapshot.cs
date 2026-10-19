@@ -22,7 +22,7 @@ namespace RandomGroup.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("RandomGroup.Api.Data.RollGroup", b =>
+            modelBuilder.Entity("RandomGroup.Api.Data.LedgerEntry", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -31,158 +31,49 @@ namespace RandomGroup.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Code")
+                    b.Property<string>("Account")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("account");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("Category")
                         .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)")
-                        .HasColumnName("code");
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Channel")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("channel");
+
+                    b.Property<string>("Consumer")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("consumer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<long>("OwnerId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("owner_id");
+                    b.Property<string>("Remark")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("remark");
 
-                    b.Property<string>("OwnerName")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("owner_name");
-
-                    b.Property<string>("Passcode")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("passcode");
-
-                    b.Property<DateTimeOffset?>("PrepDeadline")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("prep_deadline");
-
-                    b.Property<DateTimeOffset?>("PrepStartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("prep_started_at");
-
-                    b.Property<DateTimeOffset?>("ResultAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("result_at");
-
-                    b.Property<long?>("ResultOptionId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("result_option_id");
-
-                    b.Property<long>("Round")
-                        .HasColumnType("bigint")
-                        .HasColumnName("round");
-
-                    b.Property<string>("Stage")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)")
-                        .HasColumnName("stage");
-
-                    b.Property<string>("Theme")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("theme");
-
-                    b.HasKey("Id")
-                        .HasName("pk_roll_groups");
-
-                    b.HasIndex("Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_roll_groups_code");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("ix_roll_groups_created_at");
-
-                    b.HasIndex("OwnerId")
-                        .HasDatabaseName("ix_roll_groups_owner_id");
-
-                    b.ToTable("roll_groups", (string)null);
-                });
-
-            modelBuilder.Entity("RandomGroup.Api.Data.RollMember", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("GroupId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("group_id");
-
-                    b.Property<DateTimeOffset>("JoinedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("joined_at");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Ready")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)")
-                        .HasColumnName("ready");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_roll_members");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_roll_members_user_id");
-
-                    b.HasIndex("GroupId", "UserId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_roll_members_group_id_user_id");
-
-                    b.ToTable("roll_members", (string)null);
-                });
-
-            modelBuilder.Entity("RandomGroup.Api.Data.RollNotification", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Content")
+                    b.Property<string>("TagsJson")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
-                        .HasColumnName("content");
+                        .HasColumnName("tags_json");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
+                    b.Property<DateTimeOffset>("TradeAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<long?>("GroupId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("group_id");
-
-                    b.Property<string>("GroupTheme")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("group_theme");
-
-                    b.Property<bool>("Read")
-                        .HasColumnType("boolean")
-                        .HasColumnName("read");
+                        .HasColumnName("trade_at");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -195,15 +86,18 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_roll_notifications");
+                        .HasName("pk_ledger_entries");
 
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("ix_roll_notifications_user_id_created_at");
+                    b.HasIndex("UserId", "TradeAt")
+                        .HasDatabaseName("ix_ledger_entries_user_id_trade_at");
 
-                    b.ToTable("roll_notifications", (string)null);
+                    b.HasIndex("UserId", "Category", "TradeAt")
+                        .HasDatabaseName("ix_ledger_entries_user_id_category_trade_at");
+
+                    b.ToTable("ledger_entries", (string)null);
                 });
 
-            modelBuilder.Entity("RandomGroup.Api.Data.RollOption", b =>
+            modelBuilder.Entity("RandomGroup.Api.Data.LedgerOption", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -216,40 +110,49 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<long>("CreatorId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("creator_id");
+                    b.Property<bool>("IsPreset")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_preset");
 
-                    b.Property<string>("CreatorName")
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasColumnName("creator_name");
+                        .HasColumnName("name");
 
-                    b.Property<long>("GroupId")
+                    b.Property<string>("Parent")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("parent");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<long>("UserId")
                         .HasColumnType("bigint")
-                        .HasColumnName("group_id");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("title");
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_roll_options");
+                        .HasName("pk_ledger_options");
 
-                    b.HasIndex("GroupId")
-                        .HasDatabaseName("ix_roll_options_group_id");
-
-                    b.HasIndex("GroupId", "Title")
+                    b.HasIndex("UserId", "Kind", "Name")
                         .IsUnique()
-                        .HasDatabaseName("ix_roll_options_group_id_title");
+                        .HasDatabaseName("ix_ledger_options_user_id_kind_name");
 
-                    b.ToTable("roll_options", (string)null);
+                    b.HasIndex("UserId", "Kind", "Parent")
+                        .HasDatabaseName("ix_ledger_options_user_id_kind_parent");
+
+                    b.ToTable("ledger_options", (string)null);
                 });
 
-            modelBuilder.Entity("RandomGroup.Api.Data.RollUser", b =>
+            modelBuilder.Entity("RandomGroup.Api.Data.LedgerUser", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -287,22 +190,28 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("open_id");
 
+                    b.Property<bool>("TagAutoEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("tag_auto_enabled");
+
                     b.Property<string>("UnionId")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("union_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_roll_users");
+                        .HasName("pk_ledger_users");
 
                     b.HasIndex("OpenId")
                         .IsUnique()
-                        .HasDatabaseName("ix_roll_users_open_id");
+                        .HasDatabaseName("ix_ledger_users_open_id");
 
-                    b.ToTable("roll_users", (string)null);
+                    b.ToTable("ledger_users", (string)null);
                 });
 
-            modelBuilder.Entity("RandomGroup.Api.Data.RollVote", b =>
+            modelBuilder.Entity("RandomGroup.Api.Data.TagRule", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -315,60 +224,29 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<long>("GroupId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("group_id");
+                    b.Property<string>("Keyword")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("keyword");
 
-                    b.Property<long>("OptionId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("option_id");
+                    b.Property<string>("Tag")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("tag");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_roll_votes");
+                        .HasName("pk_ledger_tag_rules");
 
-                    b.HasIndex("GroupId")
-                        .HasDatabaseName("ix_roll_votes_group_id");
+                    b.HasIndex("UserId", "Tag")
+                        .HasDatabaseName("ix_ledger_tag_rules_user_id_tag");
 
-                    b.HasIndex("OptionId", "UserId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_roll_votes_option_id_user_id");
-
-                    b.ToTable("roll_votes", (string)null);
-                });
-
-            modelBuilder.Entity("RandomGroup.Api.Data.RollMember", b =>
-                {
-                    b.HasOne("RandomGroup.Api.Data.RollGroup", "Group")
-                        .WithMany("Members")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_roll_members_roll_groups_group_id");
-
-                    b.Navigation("Group");
-                });
-
-            modelBuilder.Entity("RandomGroup.Api.Data.RollOption", b =>
-                {
-                    b.HasOne("RandomGroup.Api.Data.RollGroup", "Group")
-                        .WithMany("Options")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_roll_options_roll_groups_group_id");
-
-                    b.Navigation("Group");
-                });
-
-            modelBuilder.Entity("RandomGroup.Api.Data.RollGroup", b =>
-                {
-                    b.Navigation("Members");
-
-                    b.Navigation("Options");
+                    b.ToTable("ledger_tag_rules", (string)null);
                 });
 #pragma warning restore 612, 618
         }

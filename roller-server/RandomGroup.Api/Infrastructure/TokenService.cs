@@ -9,8 +9,8 @@ namespace RandomGroup.Api.Infrastructure;
 
 public sealed class JwtOptions
 {
-    public string Issuer { get; set; } = "random-group";
-    public string Audience { get; set; } = "random-group-miniprogram";
+    public string Issuer { get; set; } = "ledger";
+    public string Audience { get; set; } = "ledger-miniprogram";
     /// <summary>对称密钥，生产环境务必用环境变量 Jwt__Key 覆盖</summary>
     public string Key { get; set; } = string.Empty;
     public int ExpireDays { get; set; } = 30;
@@ -38,7 +38,7 @@ public sealed class TokenService
 
     public TokenService(IOptions<JwtOptions> opt) => _opt = opt.Value;
 
-    public string Create(RollUser user)
+    public string Create(LedgerUser user)
     {
         if (string.IsNullOrWhiteSpace(_opt.Key) || _opt.Key.Length < 32)
             throw new InvalidOperationException("Jwt:Key 未配置或长度不足 32 位，请在配置或环境变量 Jwt__Key 中设置");

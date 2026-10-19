@@ -1,12 +1,15 @@
 name: Build and Push Backend Image
 
 # 触发条件：
-#   - 推送到 main 且改动涉及后端（roller-server/**）或本 workflow
+#   - 推送到 main 或 hamster（当前开发分支）且改动涉及后端（roller-server/**）或本 workflow
 #   - 打 v* 标签
-#   - 手动触发（Actions 页面点 Run workflow）
+#   - 手动触发（Actions 页面点 Run workflow，可选任意分支）
+#
+# 注意：latest 标签只在默认分支（main）上才会打。从 hamster 推出来的镜像只有 sha-xxxxxxx，
+# 这样开发分支的提交不会意外覆盖线上正在用的 latest。
 on:
   push:
-    branches: [main]
+    branches: [main, hamster]
     tags: ['v*']
     paths:
       - 'roller-server/**'
@@ -52,6 +55,7 @@ jobs:
             type=semver,pattern={{version}}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.BUILD_CONTEXT }}
@@ -63,3 +67,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
+
+      # 把镜像坐标和摘要写进任务摘要，方便回滚时直接照抄
+      - name: Summary
+        run: |
+          {
+            echo "### 镜像已推送"
+            echo ""
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+            echo ""
+            echo "- digest: \`${{ steps.build.outputs.digest }}\`"
+            echo "- 分支: \`${{ github.ref_name }}\`"
+            echo "- 提交: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

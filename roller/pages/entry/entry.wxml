@@ -1,0 +1,254 @@
+<view class="page">
+
+  <!-- ============ 收入 / 支出 ============ -->
+  <view class="type-switch">
+    <view class="type-item {{form.type === 'expense' ? 'type-on-expense' : ''}}" data-type="expense" bindtap="onType">
+      支出
+    </view>
+    <view class="type-item {{form.type === 'income' ? 'type-on-income' : ''}}" data-type="income" bindtap="onType">
+      收入
+    </view>
+  </view>
+
+  <!-- ============ 金额 ============ -->
+  <view class="amount-box">
+    <text class="amount-symbol">￥</text>
+    <input
+      class="amount-input num {{form.type === 'income' ? 'income-text' : 'expense-text'}}"
+      type="digit"
+      value="{{form.amount}}"
+      placeholder="0.00"
+      placeholder-class="amount-ph"
+      focus="{{autoFocus}}"
+      bindinput="onAmount"
+      maxlength="12"
+    />
+  </view>
+  <view class="amount-hint" wx:if="{{amountTip}}">{{amountTip}}</view>
+
+  <!-- ============ 分类 ============ -->
+  <view class="block">
+    <view class="block-head">
+      <text class="block-title">分类</text>
+      <text class="block-link" bindtap="manageOptions" data-kind="category">管理 ›</text>
+    </view>
+    <view class="grid">
+      <view
+        wx:for="{{categories}}"
+        wx:key="id"
+        class="grid-item {{form.category === item.name ? 'grid-on' : ''}}"
+        data-name="{{item.name}}"
+        bindtap="onCategory"
+      >
+        <view class="grid-icon">{{item.icon}}</view>
+        <view class="grid-text">{{item.name}}</view>
+      </view>
+      <view class="grid-item grid-add" bindtap="newOption" data-kind="category">
+        <view class="grid-icon">＋</view>
+        <view class="grid-text">新增</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 渠道 / 消费者 / 账户 ============ -->
+  <view class="block">
+    <view class="row-item" bindtap="openSheet" data-kind="channel">
+      <text class="row-label">渠道</text>
+      <view class="row-value">
+        <text wx:if="{{form.channel}}" class="row-picked">{{channelShort}}</text>
+        <text wx:else class="row-placeholder">{{form.category ? '选填，如 KFC、淘宝' : '先选分类'}}</text>
+        <text class="row-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="row-item" bindtap="openSheet" data-kind="consumer">
+      <text class="row-label">消费者</text>
+      <view class="row-value">
+        <text wx:if="{{form.consumer}}" class="row-picked">{{form.consumer}}</text>
+        <text wx:else class="row-placeholder">选填</text>
+        <text class="row-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="row-item" bindtap="openSheet" data-kind="account">
+      <text class="row-label">账户</text>
+      <view class="row-value">
+        <text wx:if="{{form.account}}" class="row-picked">{{form.account}}</text>
+        <text wx:else class="row-placeholder">选填</text>
+        <text class="row-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="row-item" bindtap="openSheet" data-kind="time">
+      <text class="row-label">交易时间</text>
+      <view class="row-value">
+        <text class="row-picked">{{tradeText}}</text>
+        <text class="row-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 备注与标签 ============ -->
+  <view class="block">
+    <view class="block-head">
+      <text class="block-title">备注</text>
+      <text class="t-tiny">{{form.remark.length}}/100</text>
+    </view>
+    <textarea
+      class="remark-input"
+      value="{{form.remark}}"
+      maxlength="100"
+      placeholder="写点什么，比如：和同事聚餐 AA。备注里含关键词会自动打上标签"
+      placeholder-class="ph"
+      bindinput="onRemark"
+      auto-height
+    />
+
+    <view class="tags-wrap" wx:if="{{form.tags.length > 0}}">
+      <view class="tag tag-on" wx:for="{{form.tags}}" wx:key="*this" data-tag="{{item}}" bindtap="removeTag">
+        {{item}} ✕
+      </view>
+    </view>
+
+    <view class="row-between mt12">
+      <text class="t-tiny">{{autoTags.length > 0 ? '已按备注自动识别 ' + autoTags.length + ' 个标签' : '标签由备注关键词自动识别，可手动补'}}</text>
+      <text class="block-link" bindtap="openSheet" data-kind="tag">添加标签</text>
+    </view>
+  </view>
+
+  <view class="bottom-space" style="height: 200rpx;"></view>
+
+  <!-- ============ 底部操作 ============ -->
+  <view class="action-bar">
+    <view class="btn btn-danger btn-sm" wx:if="{{isEdit}}" bindtap="remove">删除</view>
+    <view class="btn btn-primary flex1" bindtap="save">{{isEdit ? '保存修改' : '保存'}}</view>
+  </view>
+
+  <!-- ============ 选择弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{sheet}}" bindtap="closeSheet">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <view class="sheet-head">
+        <text class="sheet-title">{{sheetTitle}}</text>
+        <text class="sheet-close" bindtap="closeSheet">✕</text>
+      </view>
+
+      <view class="sheet-body">
+        <!-- 渠道：先按分类分组 -->
+        <block wx:if="{{sheet === 'channel'}}">
+          <scroll-view scroll-y class="sheet-scroll">
+            <view wx:if="{{channelGroup}}" class="group-nav">
+              <view
+                wx:for="{{options.channelGroups}}"
+                wx:key="parent"
+                class="group-nav-item {{channelGroup === item.parent ? 'group-nav-on' : ''}}"
+                data-parent="{{item.parent}}"
+                bindtap="pickChannelGroup"
+              >{{item.parent}}</view>
+            </view>
+            <view wx:else class="hint-box">选一个分类后，这里会显示该分类下的常用渠道</view>
+
+            <view class="sheet-grid" wx:if="{{channelGroup}}">
+              <view
+                wx:for="{{channelItems}}"
+                wx:key="id"
+                class="chip {{form.channel === item.name ? 'chip-on' : ''}}"
+                data-name="{{item.name}}"
+                bindtap="pickOption"
+              >{{item.shortName}}</view>
+              <view class="chip chip-add" bindtap="newOption" data-kind="channel">＋ 新增渠道</view>
+              <view class="chip" wx:if="{{form.channel}}" data-name="" bindtap="clearValue">不选渠道</view>
+            </view>
+          </scroll-view>
+        </block>
+
+        <!-- 消费者 / 账户 -->
+        <block wx:elif="{{sheet === 'consumer' || sheet === 'account'}}">
+          <scroll-view scroll-y class="sheet-scroll">
+            <view class="sheet-grid">
+              <view
+                wx:for="{{sheetItems}}"
+                wx:key="id"
+                class="chip {{form[sheet] === item.name ? 'chip-on' : ''}}"
+                data-name="{{item.name}}"
+                bindtap="pickOption"
+              >{{item.name}}</view>
+              <view class="chip chip-add" bindtap="newOption" data-kind="{{sheet}}">＋ 新增{{sheetLabel}}</view>
+              <view class="chip" wx:if="{{form[sheet]}}" data-name="" bindtap="clearValue">不选</view>
+            </view>
+          </scroll-view>
+        </block>
+
+        <!-- 标签多选 -->
+        <block wx:elif="{{sheet === 'tag'}}">
+          <scroll-view scroll-y class="sheet-scroll">
+            <view class="sheet-grid">
+              <view
+                wx:for="{{options.tags}}"
+                wx:key="id"
+                class="chip {{form.tags.indexOf(item.name) >= 0 ? 'chip-on' : ''}}"
+                data-name="{{item.name}}"
+                bindtap="toggleTag"
+              >{{item.name}}</view>
+              <view class="chip chip-add" bindtap="newOption" data-kind="tag">＋ 新增标签</view>
+            </view>
+          </scroll-view>
+          <view class="btn btn-primary mt16" bindtap="closeSheet">完成</view>
+        </block>
+
+        <!-- 时间 -->
+        <block wx:elif="{{sheet === 'time'}}">
+          <scroll-view scroll-y class="sheet-scroll">
+            <picker mode="date" value="{{dateValue}}" start="2020-01-01" end="2099-12-31" bindchange="onDate">
+              <view class="row-item">
+                <text class="row-label">日期</text>
+                <view class="row-value"><text class="row-picked">{{dateValue}}</text><text class="row-arrow">›</text></view>
+              </view>
+            </picker>
+            <view class="chip-row mt16">
+              <view class="chip" data-offset="0" bindtap="quickTime">现在</view>
+              <view class="chip" data-offset="1" bindtap="quickTime">1 小时前</view>
+              <view class="chip" data-offset="3" bindtap="quickTime">3 小时前</view>
+              <view class="chip" data-offset="24" bindtap="quickTime">昨天此刻</view>
+            </view>
+
+            <view class="block-head mt24">
+              <text class="block-title">时间</text>
+              <text class="t-tiny">交易时间是这笔钱实际发生的时间</text>
+            </view>
+            <picker mode="time" value="{{timeValue}}" bindchange="onTime">
+              <view class="row-item">
+                <text class="row-label">具体时刻</text>
+                <view class="row-value"><text class="row-picked">{{timeValue}}</text><text class="row-arrow">›</text></view>
+              </view>
+            </picker>
+          </scroll-view>
+          <view class="btn btn-primary mt16" bindtap="closeSheet">完成</view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 新增选项弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{showNewOption}}" bindtap="closeNewOption">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <view class="sheet-head">
+        <text class="sheet-title">新增{{newOptionLabel}}</text>
+        <text class="sheet-close" bindtap="closeNewOption">✕</text>
+      </view>
+      <view class="t-tiny" wx:if="{{newOptionKind === 'channel'}}">将添加到分类「{{channelGroup || form.category}}」下</view>
+      <input
+        class="input mt16"
+        value="{{newOptionName}}"
+        maxlength="16"
+        focus="{{showNewOption}}"
+        placeholder="最多 16 个字"
+        placeholder-class="ph"
+        bindinput="onNewOptionName"
+        bindconfirm="submitNewOption"
+      />
+      <view class="btn btn-primary mt24" bindtap="submitNewOption">添加</view>
+    </view>
+  </view>
+</view>

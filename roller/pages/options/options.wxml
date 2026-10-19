@@ -1,0 +1,176 @@
+<view class="page">
+
+  <!-- ============ 种类切换 ============ -->
+  <scroll-view class="tabs" scroll-x enable-flex>
+    <view
+      wx:for="{{kinds}}"
+      wx:key="key"
+      class="tab {{kind === item.key ? 'tab-on' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onKind"
+    >{{item.label}}</view>
+  </scroll-view>
+
+  <view class="head">
+    <view class="flex1">
+      <view class="head-title">{{kindLabel}}</view>
+      <view class="head-sub">{{headSub}}</view>
+    </view>
+    <view class="btn btn-primary btn-xs" bindtap="openAdd">＋ 新增</view>
+  </view>
+
+  <!-- ============ 渠道：按分类分组 ============ -->
+  <block wx:if="{{kind === 'channel'}}">
+    <view class="group" wx:for="{{groups}}" wx:for-item="g" wx:key="parent">
+      <view class="group-head">
+        <text class="group-title">{{g.parent}}</text>
+        <text class="group-count">{{g.items.length}} 个</text>
+      </view>
+      <view class="group-body">
+        <view class="opt-row" wx:for="{{g.items}}" wx:for-item="ch" wx:key="id">
+          <view class="flex1">
+            <view class="opt-name">{{ch.shortName}}</view>
+            <view class="opt-meta">
+              <text wx:if="{{ch.isPreset}}" class="tag tag-gray">预置</text>
+              <text wx:if="{{ch.used > 0}}" class="opt-used">已被 {{ch.used}} 条账目使用</text>
+              <text wx:else class="opt-unused">未使用</text>
+            </view>
+          </view>
+          <view class="opt-actions">
+            <text class="opt-act" data-id="{{ch.id}}" data-name="{{ch.shortName}}" bindtap="rename">改名</text>
+            <text class="opt-act opt-del" data-id="{{ch.id}}" data-name="{{ch.name}}" data-used="{{ch.used}}" bindtap="remove">删除</text>
+          </view>
+        </view>
+
+        <view class="opt-empty" wx:if="{{g.items.length === 0}}">该分类下暂无渠道</view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{groups.length === 0}}">
+      <view class="empty-icon">🏪</view>
+      <view class="t-sub">还没有分类，先在「分类」里添加</view>
+    </view>
+  </block>
+
+  <!-- ============ 其它：平铺列表 ============ -->
+  <block wx:else>
+    <view class="list" wx:if="{{items.length > 0}}">
+      <view class="opt-row" wx:for="{{items}}" wx:key="id" wx:for-item="op">
+        <view class="opt-icon" wx:if="{{op.icon}}">{{op.icon}}</view>
+        <view class="flex1">
+          <view class="opt-name">{{op.name}}</view>
+          <view class="opt-meta">
+            <text wx:if="{{op.isPreset}}" class="tag tag-gray">预置</text>
+            <text wx:if="{{it.used > 0}}" class="opt-used">已被 {{op.used}} 条账目使用</text>
+            <text wx:else class="opt-unused">未使用</text>
+          </view>
+        </view>
+        <view class="opt-actions">
+          <text class="opt-act" data-id="{{op.id}}" data-name="{{op.name}}" bindtap="rename">改名</text>
+          <text class="opt-act opt-del" data-id="{{op.id}}" data-name="{{op.name}}" data-used="{{op.used}}" bindtap="remove">删除</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{items.length === 0}}">
+      <view class="empty-icon">📭</view>
+      <view class="t-sub">还没有{{kindLabel}}，点右上角新增</view>
+    </view>
+  </block>
+
+  <!-- ============ 标签规则（仅标签页） ============ -->
+  <block wx:if="{{kind === 'tag'}}">
+    <view class="card-block">
+      <view class="row-between">
+        <text class="block-title">自动识别规则</text>
+        <text class="block-link" bindtap="openRule">＋ 加规则</text>
+      </view>
+      <view class="t-tiny mt8">备注里出现左侧任一关键词，就自动打上右侧标签。多个关键词用竖线分隔。</view>
+
+      <view class="rule-row" wx:for="{{rules}}" wx:for-item="rl" wx:key="id">
+        <view class="flex1">
+          <view class="rule-kw">{{rl.keywordText}}</view>
+          <view class="rule-tag">→ <text class="tag">{{rl.tag}}</text></view>
+        </view>
+        <text class="opt-act opt-del" data-id="{{rl.id}}" bindtap="removeRule">删除</text>
+      </view>
+
+      <view class="opt-empty" wx:if="{{rules.length === 0}}">还没有规则，点「加规则」创建第一条</view>
+    </view>
+  </block>
+
+  <view class="bottom-space" style="height: 40rpx;"></view>
+
+  <!-- ============ 新增 / 改名弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{showEdit}}" bindtap="closeEdit">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <view class="sheet-head">
+        <text class="sheet-title">{{editingId ? '改名' : '新增' + kindLabel}}</text>
+        <text class="sheet-close" bindtap="closeEdit">✕</text>
+      </view>
+
+      <view class="t-tiny" wx:if="{{kind === 'channel' && !editingId}}">添加到分类：{{addParent || '（请选择）'}}</view>
+      <scroll-view wx:if="{{kind === 'channel' && !editingId}}" class="parent-scroll" scroll-x enable-flex>
+        <view
+          wx:for="{{options.categories}}"
+          wx:key="id"
+          class="chip {{addParent === item.name ? 'chip-on' : ''}}"
+          data-parent="{{item.name}}"
+          bindtap="pickParent"
+        >{{item.name}}</view>
+      </scroll-view>
+
+      <input
+        class="input mt16"
+        value="{{editName}}"
+        maxlength="16"
+        focus="{{showEdit}}"
+        placeholder="最多 16 个字"
+        placeholder-class="ph"
+        bindinput="onEditName"
+        bindconfirm="submitEdit"
+      />
+      <view class="btn btn-primary mt24" bindtap="submitEdit">保存</view>
+    </view>
+  </view>
+
+  <!-- ============ 规则弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{showRule}}" bindtap="closeRule">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-handle"></view>
+      <view class="sheet-head">
+        <text class="sheet-title">新增识别规则</text>
+        <text class="sheet-close" bindtap="closeRule">✕</text>
+      </view>
+
+      <view class="field">
+        <view class="field-label">备注关键词（多个用 | 分隔）</view>
+        <input
+          class="input"
+          value="{{ruleKeyword}}"
+          maxlength="120"
+          focus="{{showRule}}"
+          placeholder="聚餐|请客|AA"
+          placeholder-class="ph"
+          bindinput="onRuleKeyword"
+        />
+      </view>
+
+      <view class="field">
+        <view class="field-label">命中后打上标签</view>
+        <view class="mt8">
+          <view
+            wx:for="{{options.tags}}"
+            wx:key="id"
+            class="chip {{ruleTag === item.name ? 'chip-on' : ''}}"
+            data-name="{{item.name}}"
+            bindtap="pickRuleTag"
+          >{{item.name}}</view>
+        </view>
+      </view>
+
+      <view class="btn btn-primary mt24" bindtap="submitRule">保存规则</view>
+    </view>
+  </view>
+</view>

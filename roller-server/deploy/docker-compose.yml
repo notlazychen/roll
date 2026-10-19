@@ -49,8 +49,8 @@ services:
       # 生产环境的连接串与密钥都走环境变量，不写进配置文件
       ConnectionStrings__Roll: ${ConnectionStrings__Roll:-Host=db;Port=5432;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB:-roll};Timeout=15;Command Timeout=120}
       Jwt__Key: ${Jwt__Key:?请在 .env 中设置 Jwt__Key（至少 32 位随机字符串）}
-      Jwt__Issuer: ${Jwt__Issuer:-random-group}
-      Jwt__Audience: ${Jwt__Audience:-random-group-miniprogram}
+      Jwt__Issuer: ${Jwt__Issuer:-ledger}
+      Jwt__Audience: ${Jwt__Audience:-ledger-miniprogram}
       WeChat__AppId: ${WeChat__AppId}
       WeChat__AppSecret: ${WeChat__AppSecret}
       # 生产环境务必保持 false：开发模式登录只用于本地联调
