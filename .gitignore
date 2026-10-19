@@ -434,3 +434,8 @@ FodyWeavers.xsd
 **/.env
 # 小程序本地私有配置
 roller/project.private.config.json
+# 【重要】小程序项目根是 roller/，仓库根目录绝不能出现 project.config.json。
+# 一旦根目录有这份文件，微信开发者工具会把 D:\workspace\hamster 当成小程序根，
+# 找不到 app.json，于是「底栏正常但主界面全白」。
+/project.config.json
+/project.private.config.json

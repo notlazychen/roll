@@ -34,11 +34,17 @@ const ENVS = {
 
 const current = ENVS[ENV] || ENVS.dev
 
+// 注意：小程序运行时**没有** process 对象。
+// 这里的 envOverrides 仅为 Node 契约测试（tests/ledger-contract.cjs）保留覆盖能力，
+// 在小程序里会安全地退化成空对象。切勿直接写 process.env，否则 app.js 加载即崩，
+// 表现为「底栏正常、主界面白屏 + Page has not been registered yet」。
+const envOverrides = (typeof process !== 'undefined' && process.env) ? process.env : {}
+
 module.exports = {
   env: ENV,
-  baseUrl: process.env.LEDGER_BASE_URL || current.baseUrl,
-  allowDevLogin: process.env.LEDGER_ALLOW_DEV_LOGIN
-    ? process.env.LEDGER_ALLOW_DEV_LOGIN === '1'
+  baseUrl: envOverrides.LEDGER_BASE_URL || current.baseUrl,
+  allowDevLogin: envOverrides.LEDGER_ALLOW_DEV_LOGIN
+    ? envOverrides.LEDGER_ALLOW_DEV_LOGIN === '1'
     : !!current.allowDevLogin,
   // 单次请求超时
   timeout: 15000
