@@ -25,14 +25,14 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-roll}
+      POSTGRES_DB: ${POSTGRES_DB:-ledger}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       # 持久化到宿主机目录，容器重建不丢数据
       - /data/docker/pgsql:/var/lib/postgresql/data
     # 不对外暴露端口，只有同网络的 api 能访问
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-roll}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ledger}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -51,13 +51,16 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Roll: ${ConnectionStrings__Roll:-Host=roll-pgsql;Port=5432;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB:-roll};Timeout=15;Command Timeout=120}
+      ConnectionStrings__Roll: ${ConnectionStrings__Roll:-Host=roll-pgsql;Port=5432;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB:-ledger};Timeout=15;Command Timeout=120}
       Jwt__Key: ${Jwt__Key:?请在 .env 中设置 Jwt__Key}
       Jwt__Issuer: ${Jwt__Issuer:-ledger}
       Jwt__Audience: ${Jwt__Audience:-ledger-miniprogram}
       WeChat__AppId: ${WeChat__AppId:-}
       WeChat__AppSecret: ${WeChat__AppSecret:-}
       Auth__AllowDevLogin: "false"
+      # 单机部署只有这一个 api 容器，不存在多实例并发执行 DDL 的问题。
+      # MigrateAsync 本身幂等（已有迁移会自动跳过），所以保持 true 最省事：
+      # 每次发布新版本带迁移时，容器起来就自己把表结构升上去，不用再登服务器手动跑。
       Database__AutoMigrate: ${Database__AutoMigrate:-true}
     # 不映射宿主机端口；nginx 通过 web 网络直接访问 roll:8080
     networks:

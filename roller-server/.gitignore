@@ -2,7 +2,14 @@
 **/obj/
 publish/
 dotnet-tools.json
+
+# 本地开发配置：含明文数据库口令，绝不进仓库
 appsettings.Development.json
-appsettings.Production.json
+
+# 注意：appsettings.Production.json 必须提交。
+# 它只放日志级别、迁移开关这类不含密钥的项；真实密钥走服务器 .env 注入。
+# 一旦忽略，GitHub Actions 拉不到它，镜像里就会缺线上配置。
+
+# 真实环境变量文件
 deploy/.env
 *.user

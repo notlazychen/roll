@@ -1,0 +1,21 @@
+# 换行符统一：避免 Linux 脚本被打成 CRLF 后在服务器上跑不起来
+# （报错形如 /usr/bin/env bash^M: bad interpreter）
+
+* text=auto
+
+# shell 脚本必须 LF，否则 shebang 会带上 \r
+*.sh            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+*.conf          text eol=lf
+
+# Windows 侧文件保持原样
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+
+# 二进制
+*.png           binary
+*.jpg           binary
+*.ico           binary
