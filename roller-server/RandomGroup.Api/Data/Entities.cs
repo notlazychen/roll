@@ -7,7 +7,19 @@ public class RollUser
     public string OpenId { get; set; } = string.Empty;
     public string? UnionId { get; set; }
     public string NickName { get; set; } = string.Empty;
-    public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// 头像原图。直接存库而不是落文件系统：单机 Docker 部署里容器重建会丢掉容器内文件，
+    /// 而 bind mount 又要用户改服务器上的 compose 才生效；头像只有几十 KB，放库最省事也最不容易丢。
+    /// </summary>
+    public byte[]? AvatarData { get; set; }
+
+    /// <summary>头像 MIME（image/jpeg、image/png、image/webp）</summary>
+    public string? AvatarContentType { get; set; }
+
+    /// <summary>头像版本号，每次更换自增：URL 里的 v 变了，客户端与微信的图片缓存才会失效</summary>
+    public int AvatarVersion { get; set; }
+
     /// <summary>开发模式登录产生的账号（仅本地调试用）</summary>
     public bool IsDevAccount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

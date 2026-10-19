@@ -11,6 +11,7 @@ const config = require('./config')
 const TOKEN_KEY = 'rg_token_v2'
 const USER_KEY = 'rg_user_v2'
 const DEV_IDS_KEY = 'rg_dev_identities_v2'
+const LOGOUT_KEY = 'rg_logged_out_v2'
 
 /* ------------------------- 本地缓存 ------------------------- */
 
@@ -45,6 +46,24 @@ function clearSession() {
   try {
     wx.removeStorageSync(TOKEN_KEY)
     wx.removeStorageSync(USER_KEY)
+  } catch (e) {}
+}
+
+/**
+ * 「用户主动退出登录」标记。
+ * ---------------------------------------------------------------
+ * 微信一键登录是静默的（wx.login 不弹授权框），所以光清掉 token 没用：
+ * 下一次 ensureLogin() 会立刻又把人静默登回来，界面看起来「退出登录不起作用」。
+ * 因此把「已主动退出」持久化下来，只有用户再点一次登录按钮才会清除。
+ */
+function isLoggedOut() {
+  try { return !!wx.getStorageSync(LOGOUT_KEY) } catch (e) { return false }
+}
+
+function setLoggedOut(flag) {
+  try {
+    if (flag) wx.setStorageSync(LOGOUT_KEY, true)
+    else wx.removeStorageSync(LOGOUT_KEY)
   } catch (e) {}
 }
 
@@ -115,12 +134,16 @@ function storeLoginResult(body) {
   if (!body || !body.token || !body.user) return null
   setToken(body.token)
   setUser(body.user)
+  // 任何一次登录成功都算「重新登录」，把主动退出标记清掉
+  setLoggedOut(false)
   return body.user
 }
 
-/** 用微信 code 换服务端 token */
-async function loginByWeChat(code) {
-  const res = await rawRequest('POST', '/api/auth/wechat', { code: code }, false)
+/** 用微信 code 换服务端 token。profile 可选：已拿到头像昵称时顺带带上 */
+async function loginByWeChat(code, profile) {
+  const body = { code: code }
+  if (profile && profile.nickName) body.nickName = String(profile.nickName).trim().slice(0, 16)
+  const res = await rawRequest('POST', '/api/auth/wechat', body, false)
   if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
     return { ok: true, user: storeLoginResult(res.data), body: res.data }
   }
@@ -147,12 +170,19 @@ function randomKey() {
 /**
  * 确保处于登录态。
  * 1) 本地已有 token 且未强制刷新 → 直接用；
- * 2) 否则 wx.login 换 code 走微信登录；
- * 3) 开发模式下微信登录不可用时，退化为本机账号登录（免配置即可联调）。
+ * 2) 用户主动退出过 → 直接拒绝（不能静默把人登回来，否则「退出登录」等于没做）；
+ * 3) 否则 wx.login 换 code 走微信登录；
+ * 4) 开发模式下微信登录不可用时，退化为本机账号登录（免配置即可联调）。
+ *
+ * force=true 只表示「忽略本地缓存的 token」，不代表可以忽略主动退出。
+ * 用户点「登录」按钮走的是 loginExplicit()。
  */
 function ensureLogin(force) {
   if (!force && getToken() && getUser()) {
     return Promise.resolve(getUser())
+  }
+  if (isLoggedOut()) {
+    return Promise.reject(new Error('已退出登录，点「微信一键登录」可以重新登录'))
   }
   if (loginPromise) return loginPromise
 
@@ -197,6 +227,43 @@ function ensureLogin(force) {
 
 function logout() {
   clearSession()
+  // 关键：留下标记，否则下一次 ensureLogin 会立刻静默登录回来
+  setLoggedOut(true)
+}
+
+/** 用户主动点「登录」：先清掉主动退出标记，再强制走一次登录 */
+function loginExplicit() {
+  setLoggedOut(false)
+  return ensureLogin(true)
+}
+
+/* ------------------------- 头像 ------------------------- */
+
+/**
+ * 上传头像（base64）。
+ * 服务端存 bytea 并返回新的地址（带自增版本号，用来刷掉图片缓存）。
+ */
+async function uploadAvatar(imageBase64, contentType) {
+  const data = String(imageBase64 || '')
+  if (!data) return { ok: false, error: '没有读取到头像数据' }
+
+  const res = await call('POST', '/api/me/avatar', {
+    imageBase64: data,
+    contentType: contentType || 'image/jpeg'
+  })
+  if (res && res.ok === false) return res
+  return { ok: true, avatarUrl: (res && res.avatarUrl) || '' }
+}
+
+/**
+ * 把服务端下发的相对地址补成完整地址（接口只回 /api/users/1/avatar?v=2，
+ * 这样服务端不用关心自己被哪个域名访问）。
+ */
+function absoluteUrl(url) {
+  const u = String(url || '').trim()
+  if (!u) return ''
+  if (/^(https?:|data:|wxfile:|blob:|file:)/i.test(u)) return u
+  return u.charAt(0) === '/' ? config.baseUrl + u : config.baseUrl + '/' + u
 }
 
 /* ------------------------- 节流提示 ------------------------- */
@@ -251,10 +318,15 @@ module.exports = {
   getDevIdentities,
   setDevIdentities,
   clearSession,
+  isLoggedOut,
+  setLoggedOut,
   logout,
   ensureLogin,
+  loginExplicit,
   loginByWeChat,
   loginByDev,
+  uploadAvatar,
+  absoluteUrl,
   randomKey,
   call,
   callValue,

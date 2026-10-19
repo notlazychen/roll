@@ -24,7 +24,7 @@ public class RollDbContext : DbContext
             e.Property(x => x.OpenId).HasMaxLength(128).IsRequired();
             e.Property(x => x.UnionId).HasMaxLength(128);
             e.Property(x => x.NickName).HasMaxLength(64).IsRequired();
-            e.Property(x => x.AvatarUrl).HasMaxLength(512);
+            e.Property(x => x.AvatarContentType).HasMaxLength(64);
             e.HasIndex(x => x.OpenId).IsUnique();
         });
 

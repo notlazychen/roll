@@ -8,13 +8,18 @@ using static RandomGroup.Api.Contracts.TimeMs;
 
 namespace RandomGroup.Api.Features;
 
-public record WeChatLoginRequest(string Code, string? NickName, string? AvatarUrl);
+/// <summary>
+/// 微信一键登录。微信只给 openid，不给头像昵称 —— 头像昵称由客户端另外走
+/// 「头像昵称填写能力」收集后提交（见 ProfileEndpoints 与小程序「我的」页）。
+/// NickName 保留可选：客户端若已拿到昵称可以顺带带上，省一次改资料请求。
+/// </summary>
+public record WeChatLoginRequest(string Code, string? NickName);
 /// <summary>
 /// 开发模式登录。deviceKey 是稳定标识（客户端生成并保存在本地），
 /// 用它而不是昵称来生成 openid —— 这样改昵称不会变成另一个账号。
 /// </summary>
 public record DevLoginRequest(string NickName, string? DeviceKey);
-public record UpdateProfileRequest(string NickName, string? AvatarUrl);
+public record UpdateProfileRequest(string NickName);
 
 public static class AuthEndpoints
 {
@@ -46,7 +51,6 @@ public static class AuthEndpoints
                     OpenId = session.OpenId,
                     UnionId = session.UnionId,
                     NickName = string.IsNullOrWhiteSpace(req.NickName) ? DeviceDefaultNick() : req.NickName.Trim(),
-                    AvatarUrl = req.AvatarUrl,
                     CreatedAt = now,
                     LastLoginAt = now
                 };
@@ -57,7 +61,6 @@ public static class AuthEndpoints
                 user.LastLoginAt = now;
                 if (!string.IsNullOrWhiteSpace(session.UnionId)) user.UnionId = session.UnionId;
                 if (!string.IsNullOrWhiteSpace(req.NickName)) user.NickName = req.NickName.Trim();
-                if (!string.IsNullOrWhiteSpace(req.AvatarUrl)) user.AvatarUrl = req.AvatarUrl;
             }
 
             await db.SaveChangesAsync(ct);
@@ -66,7 +69,7 @@ public static class AuthEndpoints
             {
                 ok = true,
                 token = tokens.Create(user),
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount),
+                user = ToDto(user),
                 isNew,
                 needNickName = string.IsNullOrWhiteSpace(req.NickName) && isNew
             });
@@ -125,7 +128,7 @@ public static class AuthEndpoints
             {
                 ok = true,
                 token = tokens.Create(user),
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount),
+                user = ToDto(user),
                 isNew = false,
                 dev = true
             });
@@ -138,14 +141,11 @@ public static class AuthEndpoints
             var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == uid, ct)
                 ?? throw ApiException.Unauthorized("账号不存在，请重新登录");
 
-            return Results.Json(new
-            {
-                ok = true,
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount)
-            });
+            return Results.Json(new { ok = true, user = ToDto(user) });
         }).WithTags("认证");
 
-        // 修改昵称/头像：同步更新已加入小队里的显示名与小队长名称
+        // 修改昵称：同步更新已加入小队里的显示名与小队长名称。
+        // 头像不走这里，改头像用 POST /api/me/avatar（见 ProfileEndpoints）。
         app.MapPut("/api/me", async (
             UpdateProfileRequest req,
             HttpContext ctx,
@@ -161,7 +161,6 @@ public static class AuthEndpoints
                 ?? throw ApiException.Unauthorized("账号不存在，请重新登录");
 
             user.NickName = nick;
-            if (req.AvatarUrl is not null) user.AvatarUrl = string.IsNullOrWhiteSpace(req.AvatarUrl) ? null : req.AvatarUrl;
 
             await db.Members.Where(m => m.UserId == uid)
                 .ExecuteUpdateAsync(s => s.SetProperty(m => m.Name, nick), ct);
@@ -170,11 +169,7 @@ public static class AuthEndpoints
 
             await db.SaveChangesAsync(ct);
 
-            return Results.Json(new
-            {
-                ok = true,
-                user = new UserDto(user.Id, user.NickName, user.AvatarUrl, user.IsDevAccount)
-            });
+            return Results.Json(new { ok = true, user = ToDto(user) });
         }).WithTags("认证");
 
         // 我的统计：已加入小队数与我创建的小队数
@@ -197,4 +192,8 @@ public static class AuthEndpoints
 
     private static string DeviceDefaultNick()
         => "成员" + Random.Shared.Next(1000, 10000);
+
+    /// <summary>统一出口：头像地址永远由 AvatarUrls 现算，库里不再存 URL</summary>
+    private static UserDto ToDto(RollUser user)
+        => new(user.Id, user.NickName, AvatarUrls.For(user), user.IsDevAccount);
 }

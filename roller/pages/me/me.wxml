@@ -2,9 +2,12 @@
 
   <!-- 身份卡 -->
   <view class="hero">
-    <view class="avatar-lg" style="background: {{me.color}};">{{me.initial}}</view>
+    <view class="avatar-lg-wrap">
+      <image class="avatar-lg-img" wx:if="{{avatarDraft || me.avatarUrl}}" src="{{avatarDraft || me.avatarUrl}}" mode="aspectFill" />
+      <view class="avatar-lg" wx:else style="background: {{me.color}};">{{me.initial}}</view>
+    </view>
     <view class="hero-name">{{me.name}}</view>
-    <view class="hero-sub">{{loggedIn ? '已登录 · 数据保存在云服务' : '未登录'}}</view>
+    <view class="hero-sub">{{heroSub}}</view>
   </view>
 
   <!-- ============ 未登录：登录 ============ -->
@@ -16,52 +19,55 @@
       <view class="login-err" wx:if="{{loginError}}">{{loginError}}</view>
 
       <view class="btn btn-primary mt24" bindtap="loginWeChat">微信一键登录</view>
+      <view class="t-tiny mt12">使用微信账号登录，头像和昵称登录后可在下方一并完善。</view>
 
-      <view class="divider mt24">
-        <view class="divider-line"></view>
-        <text class="divider-text">或使用邮箱验证码</text>
-        <view class="divider-line"></view>
-      </view>
-
-      <view class="field mt20">
-        <view class="field-label"><text>邮箱</text></view>
-        <view class="row">
-          <input
-            class="input flex1"
-            value="{{email}}"
-            maxlength="60"
-            placeholder="you@example.com"
-            placeholder-class="ph"
-            bindinput="onEmail"
-          />
-          <view class="btn btn-ghost btn-sm" style="margin-left: 16rpx;" bindtap="sendCode">
-            {{codeSent ? '重新发送' : '获取验证码'}}
-          </view>
+      <block wx:if="{{supportEmailLogin}}">
+        <view class="divider mt24">
+          <view class="divider-line"></view>
+          <text class="divider-text">或使用邮箱验证码</text>
+          <view class="divider-line"></view>
         </view>
-        <view class="field-err" wx:if="{{emailError}}">{{emailError}}</view>
-      </view>
 
-      <block wx:if="{{codeSent}}">
         <view class="field mt20">
-          <view class="field-label"><text>验证码</text></view>
-          <input
-            class="input"
-            type="number"
-            value="{{code}}"
-            maxlength="6"
-            placeholder="请输入邮件中的验证码"
-            placeholder-class="ph"
-            bindinput="onCode"
-          />
+          <view class="field-label"><text>邮箱</text></view>
+          <view class="row">
+            <input
+              class="input flex1"
+              value="{{email}}"
+              maxlength="60"
+              placeholder="you@example.com"
+              placeholder-class="ph"
+              bindinput="onEmail"
+            />
+            <view class="btn btn-ghost btn-sm" style="margin-left: 16rpx;" bindtap="sendCode">
+              {{codeSent ? '重新发送' : '获取验证码'}}
+            </view>
+          </view>
+          <view class="field-err" wx:if="{{emailError}}">{{emailError}}</view>
         </view>
-        <view class="btn btn-primary mt24" bindtap="submitCode">登录 / 注册</view>
-      </block>
 
-      <view class="t-tiny mt16">首次使用该邮箱会自动注册，不需要设置密码。</view>
+        <block wx:if="{{codeSent}}">
+          <view class="field mt20">
+            <view class="field-label"><text>验证码</text></view>
+            <input
+              class="input"
+              type="number"
+              value="{{code}}"
+              maxlength="6"
+              placeholder="请输入邮件中的验证码"
+              placeholder-class="ph"
+              bindinput="onCode"
+            />
+          </view>
+          <view class="btn btn-primary mt24" bindtap="submitCode">登录 / 注册</view>
+        </block>
+
+        <view class="t-tiny mt16">首次使用该邮箱会自动注册，不需要设置密码。</view>
+      </block>
     </view>
   </block>
 
-  <!-- ============ 已登录：统计与昵称 ============ -->
+  <!-- ============ 已登录：统计 + 头像昵称 ============ -->
   <block wx:else>
     <view class="stats">
       <view class="stat">
@@ -75,13 +81,35 @@
       </view>
     </view>
 
+    <!-- 头像昵称：微信已不再直接下发头像昵称，官方做法是让用户在这里选一次 -->
     <view class="card-block">
-      <view class="block-title">我的昵称</view>
-      <view class="row mt16">
-        <input class="input flex1" value="{{nameInput}}" maxlength="12" placeholder="请输入昵称" bindinput="onNameInput" />
-        <view class="btn btn-primary btn-sm" style="margin-left: 16rpx;" bindtap="saveName">保存</view>
+      <view class="block-title">头像与昵称</view>
+      <view class="t-muted mt8">点下方头像可选微信头像，昵称框里点一下会带出微信昵称。</view>
+
+      <view class="profile-row mt20">
+        <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+          <image class="avatar-btn-img" wx:if="{{avatarDraft || me.avatarUrl}}" src="{{avatarDraft || me.avatarUrl}}" mode="aspectFill" />
+          <view class="avatar-btn-ph" wx:else style="background: {{me.color}};">{{me.initial}}</view>
+        </button>
+        <view class="profile-fields flex1">
+          <input
+            class="input"
+            type="nickname"
+            value="{{nameInput}}"
+            maxlength="16"
+            placeholder="点击使用微信昵称"
+            placeholder-class="ph"
+            bindinput="onNameInput"
+            bindblur="onNameInput"
+            bindchange="onNameInput"
+          />
+          <view class="t-tiny mt12">头像与昵称会显示在你加入的小队里。</view>
+        </view>
       </view>
-      <view class="t-tiny mt12">修改后会同步更新你已加入小队中的显示名，以及你创建的小队的队长名称。</view>
+
+      <view class="btn btn-primary mt24" bindtap="saveProfile">
+        {{busy ? '保存中…' : '保存'}}
+      </view>
     </view>
   </block>
 
@@ -97,10 +125,10 @@
   <!-- 说明 -->
   <view class="card-block">
     <view class="block-title">关于本版本</view>
-    <view class="info-item">· 数据存储：微信云服务，无需自己维护服务器</view>
+    <view class="info-item">· 数据存储：自建服务（ASP.NET Core + PostgreSQL）</view>
     <view class="info-item">· 多人协作：真实多端同步，各自用微信账号登录</view>
-    <view class="info-item">· 随机方式：票数作为权重，由云端抽取并保证结果一致</view>
-    <view class="info-item">· 登录方式：微信一键登录；没有微信授权环境时可用邮箱验证码</view>
+    <view class="info-item">· 随机方式：票数作为权重，由服务端抽取并保证结果一致</view>
+    <view class="info-item">· 登录方式：微信一键登录；头像昵称按微信规范由用户自己确认一次</view>
   </view>
 
   <!-- 危险操作 -->

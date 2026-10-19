@@ -23,7 +23,7 @@ server/
 │  ├─ Infrastructure/              JWT、统一异常响应、微信 code2session 客户端
 │  └─ Migrations/                  EF Core 迁移（第二个迁移含人数上限触发器）
 ├─ tests/
-│  ├─ e2e-api.js                   后端接口端到端测试（84 项）
+│  ├─ e2e-api.js                   后端接口端到端测试（96 项）
 │  └─ miniprogram-contract.cjs     小程序数据层 ↔ 后端契约测试（70 项）
 ├─ deploy/
 │  ├─ Dockerfile / docker-compose.yml / .env.example
@@ -108,7 +108,9 @@ dotnet run
 | POST | `/api/auth/wechat` | `wx.login` 的 code 换 token（服务端调 code2session） | 匿名 |
 | POST | `/api/auth/dev` | 开发模式登录 | 匿名（仅 Development） |
 | GET | `/api/me` | 当前用户 | 登录 |
-| PUT | `/api/me` | 改昵称/头像，同步组内显示名与队长名 | 登录 |
+| PUT | `/api/me` | 改昵称，同步组内显示名与队长名 | 登录 |
+| POST | `/api/me/avatar` | 上传头像 `{imageBase64, contentType}`，存库并自增版本号 | 登录 |
+| GET | `/api/users/{id}/avatar?v=N` | 读取头像（`<image src>` 不会带 token，所以匿名） | 匿名 |
 | GET | `/api/me/stats` | 我加入/创建的小队数 | 登录 |
 | GET | `/api/groups?keyword=` | 大厅列表，按主题模糊或 6 位邀请码精确匹配 | 登录 |
 | POST | `/api/groups` | 创建小队（创建者自动成为队长并入组） | 登录 |
@@ -164,6 +166,29 @@ POST /api/auth/wechat { code }
 2. **`AppSecret` 绝对不能放进小程序代码**，只能放在服务端的环境变量里。
 
 小程序端的 `utils/api.js` 在收到 401 时会自动重新走一遍登录并重试一次，用户无感。
+
+### 头像与昵称从哪来
+
+微信早已不再随登录下发头像和昵称（`wx.getUserProfile` 已回收），官方做法是
+**「头像昵称填写能力」**：小程序里用 `<button open-type="chooseAvatar">` 取头像、
+`<input type="nickname">` 取昵称，用户各确认一次。所以：
+
+```
+用户选头像 → 本地临时文件 → wx.compressImage 压到 240px → base64
+        → POST /api/me/avatar → 存 roll_users.avatar_data(bytea) → 返回 /api/users/{id}/avatar?v=N
+昵称框带出微信昵称 → PUT /api/me { nickName }
+```
+
+两个设计取舍：
+
+1. **头像存库不落盘**：单机 Docker 部署里容器重建会丢掉容器内文件，而 bind mount 又要改服务器上的
+   compose 才生效；头像压完只有几十 KB，放 `bytea` 最省事也最不容易丢。
+2. **接口只下发相对路径**：`/api/users/{id}/avatar?v=N`，客户端自己拼服务地址
+   （`utils/config.js` 的 `baseUrl`），所以反代域名、端口、本地调试地址都不用让服务端知道。
+   `v` 是自增版本号，换头像后地址就变了，客户端和微信的图片缓存会自动失效。
+
+> 小程序侧注意：`<image>` 加载网络图需要把服务域名加进后台的 **downloadFile 合法域名**
+> （和 request 合法域名是两份配置）。开发时勾选「不校验合法域名」即可跳过。
 
 ### 开发模式登录
 
@@ -293,7 +318,7 @@ const ENV = 'prod'
 ```bash
 # 后端接口端到端（直接打真实数据库）
 node server/tests/e2e-api.js
-# → 通过 84 项
+# → 通过 96 项
 
 # 小程序数据层与后端的契约（在 Node 里模拟 wx 环境，跑的是小程序真实的 utils/）
 node server/tests/miniprogram-contract.cjs

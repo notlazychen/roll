@@ -272,6 +272,54 @@ async function waitForServer() {
   const emptyNick = await req('PUT', '/api/me', { nickName: '   ' }, mate.token)
   check('空昵称被拒绝', emptyNick.status === 400, emptyNick.data)
 
+  /* ---------------- 14.5. 头像上传与读取 ---------------- */
+  console.log('\n【14.5】头像上传与读取')
+
+  // 1×1 透明 PNG，够用来验证文件头识别与存取
+  const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='
+
+  const badB64 = await req('POST', '/api/me/avatar', { imageBase64: 'not-base64!!' }, mate.token)
+  check('非法 base64 被拒绝', badB64.status === 400, badB64.data)
+
+  const notImage = await req('POST', '/api/me/avatar',
+    { imageBase64: Buffer.from('hello world').toString('base64') }, mate.token)
+  check('非图片内容被拒绝（按文件头判断，不信任客户端 mime）',
+    notImage.status === 400 && /JPG/.test(notImage.data.error || ''), notImage.data)
+
+  const oversize = Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]), Buffer.alloc(600 * 1024)])
+  const tooBig = await req('POST', '/api/me/avatar', { imageBase64: oversize.toString('base64') }, mate.token)
+  check('超过 512KB 被拒绝', tooBig.status === 400 && /512/.test(tooBig.data.error || ''), tooBig.data)
+
+  const uploaded = await req('POST', '/api/me/avatar',
+    { imageBase64: PNG_1PX, contentType: 'image/png' }, mate.token)
+  check('上传成功，返回相对地址 + 版本号',
+    uploaded.data.ok === true && /^\/api\/users\/\d+\/avatar\?v=\d+$/.test(uploaded.data.avatarUrl || ''), uploaded.data)
+  const avatarPath = uploaded.data.avatarUrl
+
+  const meWithAvatar = await req('GET', '/api/me', null, mate.token)
+  check('GET /api/me 带出同一个头像地址', meWithAvatar.data.user.avatarUrl === avatarPath, meWithAvatar.data.user)
+
+  // 刻意不带 token：小程序 <image src> 不会带 Authorization
+  const anonAvatar = await fetch(BASE + avatarPath)
+  const anonBytes = Buffer.from(await anonAvatar.arrayBuffer())
+  check('头像可匿名读取（<image src> 不带 token）', anonAvatar.status === 200, anonAvatar.status)
+  check('返回的 mime 与文件头一致',
+    (anonAvatar.headers.get('content-type') || '').indexOf('image/png') === 0, anonAvatar.headers.get('content-type'))
+  check('返回的字节与上传的一致', anonBytes.length === 70, anonBytes.length)
+  check('带长缓存头（地址里有版本号，内容不会变）',
+    /max-age=\d+/.test(anonAvatar.headers.get('cache-control') || ''), anonAvatar.headers.get('cache-control'))
+
+  const reUpload = await req('POST', '/api/me/avatar',
+    { imageBase64: PNG_1PX, contentType: 'image/png' }, mate.token)
+  check('再次上传版本号自增（客户端缓存才会失效）',
+    reUpload.data.avatarUrl !== avatarPath && /v=2$/.test(reUpload.data.avatarUrl || ''), reUpload.data.avatarUrl)
+
+  const noAvatar = await fetch(BASE + '/api/users/99999999/avatar?v=1')
+  check('没有头像的用户返回 404', noAvatar.status === 404, noAvatar.status)
+
+  const anonUpload = await req('POST', '/api/me/avatar', { imageBase64: PNG_1PX })
+  check('未登录不能上传头像', anonUpload.status === 401, anonUpload.data)
+
   /* ---------------- 15. 零票等权兜底 ---------------- */
   console.log('\n【15】全员零票时退化为等权')
   const g4 = await req('POST', '/api/groups', { theme: '零票' + stamp }, leader.token)

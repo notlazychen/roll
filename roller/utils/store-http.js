@@ -1,19 +1,19 @@
 /**
- * 数据层 · 自建服务实现（备用）
+ * 数据层 · 自建服务实现（当前使用）
  * ---------------------------------------------------------------
  * 全部数据保存在你自己的 ASP.NET Core + PostgreSQL 服务上，这里只做 HTTP 调用。
  *
- * 这个文件是「自建服务器」这条路的实现，默认不启用：
- * 把 utils/config.js 的 DATA_SOURCE 改成 'server' 才会走到这里。
- * 平时由 utils/store-cloud.js（云服务实现）提供同样的方法。
- *
- * 两套实现的方法名与返回结构完全一致，所以页面代码不需要区分：
+ * 两套实现（本文件与 utils/store-cloud.js）的方法名与返回结构完全一致，
+ * 由 utils/store.js 按 utils/config.js 的 DATA_SOURCE 分派，页面代码不区分：
  *   - 写入类返回 { ok, error?, ... }
  *   - 读取类返回数组或对象（失败时给兜底值，并节流提示一次）
  *
- * 环境切换见 utils/config.js 的 baseUrl；部署说明见 server/README.md。
+ * 环境切换见 utils/config.js 的 baseUrl；接入与部署说明见 ../roller-server/README.md。
  *
  * 服务端数据模型：
+ *   user         { id, nickName, avatarUrl, isDevAccount }
+ *                —— avatarUrl 是服务端现算的相对地址（/api/users/{id}/avatar?v=N），
+ *                   这里用 api.absoluteUrl() 补成完整地址再交给页面
  *   group        { id, code, theme, passcode, ownerId, ownerName, stage,
  *                  prepDeadline, prepStartedAt, resultOptionId, resultAt, createdAt,
  *                  memberCount, hasPasscode }
@@ -23,6 +23,10 @@
  *
  * 阶段 stage：config（配置）-> preparing（准备）-> rolling（随机中）-> result（已出结果）
  * 阶段推进全部由服务端裁决，客户端只负责发起动作与轮询。
+ *
+ * 登录态：
+ *   微信一键登录是静默的，所以 api.js 会把「用户主动退出」持久化成一个标记，
+ *   退出后 ensureLogin() 一律拒绝 —— 否则页面 onShow 一刷新就又被登回来了。
  */
 
 const api = require('./api')
@@ -38,11 +42,21 @@ const MAX_OPTION = 20
 function getMe() {
   const u = api.getUser()
   if (!u) return { uid: 0, name: '', avatarUrl: '' }
-  return { uid: u.id, name: u.nickName, avatarUrl: u.avatarUrl || '' }
+  return {
+    uid: u.id,
+    name: u.nickName,
+    // 服务端只下发相对地址（/api/users/1/avatar?v=2），这里补成能直接塞进 <image src> 的完整地址
+    avatarUrl: api.absoluteUrl(u.avatarUrl || '')
+  }
 }
 
 function isLoggedIn() {
   return !!api.getToken() && !!api.getUser()
+}
+
+/** 用户主动退出登录后为 true —— 页面据此显示未登录状态，而不是被静默登回去 */
+function isLoggedOut() {
+  return api.isLoggedOut()
 }
 
 function isDevMode() {
@@ -58,9 +72,25 @@ function ensureLogin(force) {
   return api.ensureLogin(force)
 }
 
-/** 修改自己的昵称：服务端会同步更新已加入小队里的显示名与队长名 */
-async function updateMyProfile(nickName, avatarUrl) {
-  const res = await api.call('PUT', '/api/me', { nickName: nickName, avatarUrl: avatarUrl })
+/**
+ * 微信一键登录（用户点按钮触发）。
+ * 自建服务这边登录不需要弹授权框，点一下即可；返回结构与云版保持一致。
+ */
+async function loginByWeChat() {
+  try {
+    const user = await api.loginExplicit()
+    return { ok: true, user: user }
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || '微信登录失败' }
+  }
+}
+
+/**
+ * 改昵称。服务端会同步更新已加入小队里的显示名与队长名。
+ * 头像不走这里 —— 见 saveAvatar / saveProfile。
+ */
+async function updateMyProfile(nickName) {
+  const res = await api.call('PUT', '/api/me', { nickName: nickName })
   if (!res.ok) return res
 
   const prev = api.getUser() || {}
@@ -83,6 +113,42 @@ async function updateMyProfile(nickName, avatarUrl) {
   }
 
   return res
+}
+
+/** 上传头像（base64 + mime），成功后把新的头像地址写回本地缓存 */
+async function saveAvatar(imageBase64, contentType) {
+  const res = await api.uploadAvatar(imageBase64, contentType)
+  if (!res.ok) return res
+
+  const prev = api.getUser() || {}
+  prev.avatarUrl = res.avatarUrl || ''
+  api.setUser(prev)
+
+  return { ok: true, avatarUrl: getMe().avatarUrl }
+}
+
+/**
+ * 「我的」页保存资料：一次提交昵称 + 头像。
+ * 头像只有一个（不可清空），传了才更新；昵称为空时只更新头像。
+ */
+async function saveProfile(opt) {
+  opt = opt || {}
+  const name = String(opt.name || '').trim()
+
+  if (name && name.length > 16) return { ok: false, error: '昵称最多 16 个字符' }
+
+  if (opt.avatarBase64) {
+    const up = await saveAvatar(opt.avatarBase64, opt.contentType)
+    if (!up.ok) return up
+  }
+
+  if (name) {
+    const res = await updateMyProfile(name)
+    if (!res.ok) return res
+  }
+
+  const me = getMe()
+  return { ok: true, name: me.name, avatarUrl: me.avatarUrl }
 }
 
 function logout() {
@@ -363,7 +429,11 @@ async function myStats() {
   return (res && res.stats) || { joinedCount: 0, ownedCount: 0 }
 }
 
-/** 退出登录并清掉本机缓存（开发身份列表一并清空） */
+/**
+ * 退出登录：清掉本机 token 与账号缓存，并留下「已主动退出」标记。
+ * 标记不清掉的话，下一次 ensureLogin 会立刻静默登录回来 —— 看起来就像退出没生效。
+ * 云端数据不受影响。
+ */
 function resetAll() {
   api.logout()
   api.setDevIdentities([])
@@ -373,10 +443,14 @@ function resetAll() {
 /** 环境信息，便于「我的」页排查连不上服务端的问题 */
 function envInfo() {
   return {
+    dataSource: 'server',
     env: config.env,
     baseUrl: config.baseUrl,
     allowDevLogin: config.allowDevLogin,
-    loggedIn: isLoggedIn()
+    loggedIn: isLoggedIn(),
+    loggedOut: isLoggedOut(),
+    // 自建服务没有邮箱验证码登录（那是云服务特有的），页面据此决定要不要展示这一段
+    supportEmailLogin: false
   }
 }
 
@@ -387,10 +461,14 @@ module.exports = {
 
   ensureIdentity,
   ensureLogin,
+  loginByWeChat,
   getMe,
   isLoggedIn,
+  isLoggedOut,
   isDevMode,
   updateMyProfile,
+  saveAvatar,
+  saveProfile,
   logout,
   listIdentities,
   switchIdentity,

@@ -176,6 +176,7 @@ if (config.GetValue("Database:AutoMigrate", false))
 
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapAuthEndpoints();
+app.MapProfileEndpoints();
 app.MapGroupEndpoints();
 app.MapOptionEndpoints();
 app.MapRollEndpoints();

@@ -146,6 +146,13 @@
   border-width: 0;
 }
 
+/* 真实头像用 <image>，需要自己撑开尺寸并去掉行内元素默认间隙 */
+.avatar-img {
+  display: block;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
 .leader-flag {
   position: absolute;
   right: -2rpx;

@@ -5,7 +5,8 @@
     <view class="back" bindtap="goBack">‹</view>
     <view class="flex1"></view>
     <view class="idpill" bindtap="openIdentity">
-      <view class="avatar avatar-sm" style="background: {{me.color || '#6D5BF6'}};">{{me.initial || '我'}}</view>
+      <image class="avatar avatar-sm avatar-img" wx:if="{{me.avatarUrl}}" src="{{me.avatarUrl}}" mode="aspectFill" />
+      <view class="avatar avatar-sm" wx:else style="background: {{me.color || '#6D5BF6'}};">{{me.initial || '我'}}</view>
       <text class="idpill-name">{{me.name}}</text>
     </view>
     <view class="menu-btn" bindtap="openMenu">⋯</view>

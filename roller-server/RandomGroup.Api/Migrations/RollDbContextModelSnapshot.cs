@@ -258,10 +258,18 @@ namespace RandomGroup.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("AvatarUrl")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("avatar_url");
+                    b.Property<string>("AvatarContentType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("avatar_content_type");
+
+                    b.Property<byte[]>("AvatarData")
+                        .HasColumnType("bytea")
+                        .HasColumnName("avatar_data");
+
+                    b.Property<int>("AvatarVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("avatar_version");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")

@@ -40,7 +40,16 @@ Page({
 
   async load(done) {
     try {
-      try { await store.ensureLogin() } catch (e) {}
+      // 主动退出登录后就别再自动登录/打接口了，否则会 401 → 又被静默登回来
+      if (!store.envInfo().loggedOut) {
+        try { await store.ensureLogin() } catch (e) {}
+      }
+      if (!store.isLoggedIn()) {
+        this.setData({ list: [], me: store.getMe(), loading: false })
+        if (typeof done === 'function') done()
+        return
+      }
+
       const me = store.getMe()
       const rows = await store.listNotifications()
       const list = rows.map(function (n) {

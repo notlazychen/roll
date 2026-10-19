@@ -24,6 +24,64 @@
   box-shadow: 0 12rpx 30rpx rgba(109, 91, 246, 0.24);
 }
 
+.avatar-lg-img {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 50%;
+  display: block;
+  background: #F0F1F7;
+  box-shadow: 0 12rpx 30rpx rgba(109, 91, 246, 0.24);
+}
+
+/* 头像昵称卡片 */
+.profile-row {
+  display: flex;
+  align-items: center;
+}
+
+.profile-fields {
+  margin-left: 24rpx;
+  min-width: 0;
+}
+
+/* 微信「头像昵称填写能力」要求用 button open-type="chooseAvatar"，
+   这里把 button 的默认样式（边框、底色、内边距）全部清掉 */
+.avatar-btn {
+  width: 132rpx;
+  height: 132rpx;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.avatar-btn-img {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 50%;
+  display: block;
+  background: #F0F1F7;
+}
+
+.avatar-btn-ph {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 52rpx;
+  font-weight: 700;
+}
+
 .hero-name {
   margin-top: 20rpx;
   font-size: 40rpx;
@@ -182,6 +240,25 @@
   margin: 0 20rpx;
   font-size: 23rpx;
   color: #9AA0B5;
+}
+
+/* 登录区的表单（与 index/group 页保持一致的观感） */
+.field {
+  margin-top: 4rpx;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 26rpx;
+  color: #4A4F66;
+  font-weight: 500;
+  margin-bottom: 12rpx;
+}
+
+.ph {
+  color: #B4B9CC;
 }
 
 .field-err {

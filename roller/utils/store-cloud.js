@@ -26,6 +26,8 @@ const MAX_OPTION = 20
 
 const USER_KEY = 'rg_cloud_user_v1'
 const NICK_KEY = 'rg_cloud_nick_v1'
+const LOCAL_AVATAR_KEY = 'rg_cloud_avatar_v1'
+const LOGOUT_KEY = 'rg_logged_out_v2'
 
 /* ------------------------- 本地缓存 ------------------------- */
 
@@ -45,6 +47,20 @@ function writeStorage(key, value) {
 
 function removeStorage(key) {
   try { wx.removeStorageSync(key) } catch (e) {}
+}
+
+/**
+ * 「用户主动退出登录」标记（与 utils/api.js 用同一个 key）。
+ * 不留下这个标记的话，清会话之后 ensureLogin 会立刻静默登录回来，
+ * 「退出登录」就等于没做。
+ */
+function isLoggedOut() {
+  return !!readStorage(LOGOUT_KEY, false)
+}
+
+function setLoggedOut(flag) {
+  if (flag) writeStorage(LOGOUT_KEY, true)
+  else removeStorage(LOGOUT_KEY)
 }
 
 /** 昵称由用户自己设置，微信登录不提供昵称 */
@@ -141,7 +157,8 @@ function getMe() {
   return {
     uid: String(u.id),
     name: u.name || getNickname() || '冒险者',
-    avatarUrl: u.avatarUrl || ''
+    // 优先本机头像（云版没有头像字段）
+    avatarUrl: u.localAvatar || u.avatarUrl || ''
   }
 }
 
@@ -161,9 +178,13 @@ function applySession(session) {
   const cached = {
     id: String(su.id),
     name: getNickname() || su.name || '冒险者',
-    avatarUrl: su.avatarUrl || ''
+    avatarUrl: su.avatarUrl || '',
+    // 云版没有头像字段，用户在这里选的头像只能存在本机（换设备/重新登录会丢）
+    localAvatar: readStorage(LOCAL_AVATAR_KEY, '')
   }
   setCachedUser(cached)
+  // 登录成功即视为「重新登录」，清掉主动退出标记
+  setLoggedOut(false)
   return cached
 }
 
@@ -192,8 +213,8 @@ function wxLoginCode() {
   })
 }
 
-/** 微信一键登录：wx.login 取 code，交给云服务换会话 */
-async function loginByWeChat() {
+/** 微信一键登录：wx.login 取 code，交给云服务换会话（内部使用） */
+async function wechatSignIn() {
   let code = ''
   try {
     code = await wxLoginCode()
@@ -281,6 +302,12 @@ let loginPromise = null
  */
 function ensureLogin(force) {
   if (!force && isLoggedIn()) return Promise.resolve(getMe())
+  // 用户主动退出过：不再静默登录，等他自己点「登录」
+  if (isLoggedOut()) {
+    const err = new Error('已退出登录，点「微信一键登录」可以重新登录')
+    err.needsManualLogin = true
+    return Promise.reject(err)
+  }
   if (loginPromise) return loginPromise
 
   loginPromise = (async function () {
@@ -294,7 +321,7 @@ function ensureLogin(force) {
       } catch (e) {}
     }
 
-    const r = await loginByWeChat()
+    const r = await wechatSignIn()
     if (r.ok) return r.user
 
     const err = new Error(r.error || '登录失败')
@@ -316,10 +343,28 @@ function ensureIdentity(force) {
 async function signOut() {
   try { await cloud.auth.signOut() } catch (e) {}
   setCachedUser(null)
+  removeStorage(LOCAL_AVATAR_KEY)
+  // 留下标记，避免下一次 ensureLogin 又静默登回来
+  setLoggedOut(true)
 }
 
 function logout() {
   return signOut()
+}
+
+/**
+ * 微信一键登录（用户主动点按钮时调用）。
+ * 先清掉「已主动退出」标记，再强制登录一次。
+ * 与自建服务版同名同结构，页面代码不用区分数据源。
+ */
+async function loginByWeChat() {
+  setLoggedOut(false)
+  try {
+    const user = await ensureLogin(true)
+    return { ok: true, user: user }
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || '微信登录失败' }
+  }
 }
 
 /* ------------------------- 昵称 ------------------------- */
@@ -342,6 +387,47 @@ async function updateMyProfile(nickName) {
     return res || { ok: false, error: '保存失败，请重试' }
   }
   return { ok: true, name: name, user: getMe() }
+}
+
+/**
+ * 保存头像。
+ * 说明：云服务的用户表没有头像字段（roll_set_nickname 只改昵称），
+ * 所以云版只能把头像存在本机 —— 换设备或清缓存后会回到「底色 + 首字」占位。
+ * 自建服务版是真正上传到服务端存库的，两边行为差异只在这里。
+ */
+function saveAvatar(imageBase64) {
+  const data = String(imageBase64 || '')
+  if (!data) return { ok: false, error: '没有读取到头像数据' }
+
+  const uri = data.indexOf('data:') === 0 ? data : 'data:image/jpeg;base64,' + data
+  writeStorage(LOCAL_AVATAR_KEY, uri)
+
+  const cur = getCachedUser()
+  if (cur) {
+    cur.localAvatar = uri
+    setCachedUser(cur)
+  }
+  return { ok: true, avatarUrl: uri }
+}
+
+/** 「我的」页保存资料：一次提交昵称 + 头像（语义与自建服务版一致） */
+async function saveProfile(opt) {
+  opt = opt || {}
+  const name = String(opt.name || '').trim()
+  if (name && name.length > 12) return { ok: false, error: '昵称最多 12 个字' }
+
+  if (opt.avatarBase64) {
+    const up = saveAvatar(opt.avatarBase64)
+    if (!up.ok) return up
+  }
+
+  if (name) {
+    const res = await updateMyProfile(name)
+    if (!res.ok) return res
+  }
+
+  const me = getMe()
+  return { ok: true, name: me.name, avatarUrl: me.avatarUrl }
 }
 
 /* ------------------------- 身份（云版只有自己） ------------------------- */
@@ -630,6 +716,7 @@ async function myStats() {
 async function resetAll() {
   await signOut()
   setNickname('')
+  removeStorage(LOCAL_AVATAR_KEY)
   return true
 }
 
@@ -640,7 +727,10 @@ function envInfo() {
     env: 'cloud',
     baseUrl: config.cloud.endpoint,
     allowDevLogin: false,
-    loggedIn: isLoggedIn()
+    loggedIn: isLoggedIn(),
+    loggedOut: isLoggedOut(),
+    // 云服务自带邮箱验证码登录
+    supportEmailLogin: true
   }
 }
 
@@ -653,8 +743,11 @@ module.exports = {
   ensureLogin,
   getMe,
   isLoggedIn,
+  isLoggedOut,
   isDevMode,
   updateMyProfile,
+  saveAvatar,
+  saveProfile,
   logout,
   listIdentities,
   switchIdentity,
@@ -698,8 +791,10 @@ module.exports = {
   resetAll,
   envInfo,
 
-  // 云服务特有的登录方式（自建服务版没有，页面通过 typeof 判断是否存在）
+  // 两个数据源都有的登录入口
   loginByWeChat,
+
+  // 云服务特有的登录方式（自建服务版没有，页面通过 envInfo().supportEmailLogin 判断）
   sendEmailCode,
   submitEmailCode,
   signOut
