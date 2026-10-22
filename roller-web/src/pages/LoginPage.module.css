@@ -348,3 +348,78 @@
     font-size: 10.5px;
   }
 }
+
+/* ------------------------- 微信扫码登录 ------------------------- */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 12px;
+  color: #8a938e;
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e6e2;
+}
+
+.wxBtn {
+  width: 100%;
+  background: #f0f7f3;
+  color: #1f8a70;
+  border: 1px solid #cfe6dc;
+  font-weight: 600;
+}
+
+.wxBtn:hover {
+  background: #e4f1ea;
+}
+
+.wxBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0 6px;
+}
+
+.wxQr {
+  width: 168px;
+  height: 168px;
+  border-radius: 12px;
+  border: 1px solid #e2e6e2;
+}
+
+.wxCode {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #173f33;
+  font-variant-numeric: tabular-nums;
+}
+
+.wxCode em {
+  font-style: normal;
+  color: #b9c4bd;
+  padding: 0 2px;
+}
+
+.wxHint {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #6b7671;
+  text-align: center;
+  margin: 0;
+}
+
+.wxActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}

@@ -31,7 +31,22 @@ export const authApi = {
   me: () => http.get<MeResponse>('/api/me'),
 
   updateProfile: (patch: Partial<Pick<User, 'nickName' | 'avatarUrl' | 'tagAutoEnabled'>>) =>
-    http.put<{ ok: boolean; user: User }>('/api/me', patch)
+    http.put<{ ok: boolean; user: User }>('/api/me', patch),
+
+  /* ------- 微信扫码登录（跨端配对，见后端 WebQrLoginEndpoints） ------- */
+
+  /** 生成 8 位配对码，5 分钟内有效 */
+  createWebQr: () =>
+    http.post<{ ok: boolean; ticket: string; expiresInMs: number }>('/api/auth/web-qr', null, true),
+
+  /** 轮询配对状态：pending / approved（带 token，只发一次）/ expired / consumed */
+  pollWebQr: (ticket: string) =>
+    http.get<{
+      ok: boolean
+      status: 'pending' | 'approved' | 'expired' | 'consumed'
+      token?: string
+      user?: User
+    }>(`/api/auth/web-qr/${encodeURIComponent(ticket)}`, undefined, true)
 }
 
 /* --------------------------- 账目 --------------------------- */

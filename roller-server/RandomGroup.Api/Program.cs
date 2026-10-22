@@ -204,6 +204,7 @@ if (config.GetValue("Database:AutoMigrate", false))
 
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapAuthEndpoints();
+app.MapWebQrLoginEndpoints();
 app.MapEntryEndpoints();
 app.MapOptionEndpoints();
 app.MapReportEndpoints();

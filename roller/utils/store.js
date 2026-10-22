@@ -388,6 +388,8 @@ module.exports = {
   addTagRule,
   deleteTagRule,
 
+  approveWebQr: api.approveWebQr,
+
   envInfo: function () {
     return { env: api.config.env, baseUrl: api.config.baseUrl, allowDevLogin: api.config.allowDevLogin }
   }

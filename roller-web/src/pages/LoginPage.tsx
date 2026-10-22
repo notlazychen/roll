@@ -1,18 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import QRCode from 'qrcode'
 import { useAuth } from '../lib/auth'
+import { authApi } from '../lib/api'
 import { ApiError } from '../lib/http'
 import styles from './LoginPage.module.css'
 
 type Tab = 'login' | 'register'
 
+/** 扫码登录面板的状态机：待生成 → 展示配对码等小程序批准 → 完成/失败 */
+type WxState =
+  | { phase: 'idle' }
+  | { phase: 'ready'; ticket: string; qrDataUrl: string; expiresAt: number }
+  | { phase: 'done' }
+  | { phase: 'error'; message: string }
+
 export default function LoginPage() {
-  const { login, register } = useAuth()
+  const { login, register, completeWxLogin } = useAuth()
   const [tab, setTab] = useState<Tab>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nickName, setNickName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [wx, setWx] = useState<WxState>({ phase: 'idle' })
+  const pollRef = useRef<number | null>(null)
+
+  // 离开页面/切换状态时停掉轮询
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) window.clearTimeout(pollRef.current)
+    }
+  }, [])
 
   const isRegister = tab === 'register'
 
@@ -40,6 +58,61 @@ export default function LoginPage() {
       setError(err instanceof ApiError ? err.message : '出了点问题，请稍后再试')
       setBusy(false)
     }
+  }
+
+  /* ------------------------- 微信扫码登录 ------------------------- */
+
+  function stopPolling() {
+    if (pollRef.current) {
+      window.clearTimeout(pollRef.current)
+      pollRef.current = null
+    }
+  }
+
+  async function startWxLogin() {
+    setError(null)
+    stopPolling()
+    try {
+      const res = await authApi.createWebQr()
+      const qrDataUrl = await QRCode.toDataURL(res.ticket, {
+        margin: 1,
+        width: 168,
+        color: { dark: '#173f33', light: '#ffffff' }
+      })
+      setWx({ phase: 'ready', ticket: res.ticket, qrDataUrl, expiresAt: Date.now() + res.expiresInMs })
+      poll(res.ticket)
+    } catch (err) {
+      setWx({
+        phase: 'error',
+        message: err instanceof ApiError ? err.message : '生成配对码失败，请稍后再试'
+      })
+    }
+  }
+
+  function poll(ticket: string) {
+    pollRef.current = window.setTimeout(async () => {
+      try {
+        const res = await authApi.pollWebQr(ticket)
+        if (res.status === 'approved' && res.token && res.user) {
+          completeWxLogin(res.token, res.user)
+          setWx({ phase: 'done' })
+          return // 登录成功，路由守卫会跳走
+        }
+        if (res.status === 'expired' || res.status === 'consumed') {
+          setWx({ phase: 'error', message: '配对码已失效，请重新生成' })
+          return
+        }
+        poll(ticket)
+      } catch {
+        // 网络抖动：继续轮询，别让一次失败打断流程
+        poll(ticket)
+      }
+    }, 2000)
+  }
+
+  function closeWxPanel() {
+    stopPolling()
+    setWx({ phase: 'idle' })
   }
 
   return (
@@ -76,6 +149,43 @@ export default function LoginPage() {
 
       {/* 右：表单区 */}
       <main className={styles.formArea}>
+        {(wx.phase === 'ready' || wx.phase === 'error') && (
+          <div className={styles.card}>
+            <div>
+              <h2 className={styles.title}>微信扫码登录</h2>
+              <p className={styles.subtitle}>
+                打开「哈姆斯特」小程序 → 我的 → 扫一扫登录网页
+              </p>
+            </div>
+
+            {wx.phase === 'ready' && (
+              <div className={styles.wxBox}>
+                <img className={styles.wxQr} src={wx.qrDataUrl} alt="配对码二维码" />
+                <div className={styles.wxCode}>
+                  {wx.ticket.slice(0, 4)}<em>–</em>{wx.ticket.slice(4)}
+                </div>
+                <p className={styles.wxHint}>
+                  也可以在小程序里手动输入这串配对码。码 5 分钟内有效，批准后本页会自动登录。
+                </p>
+              </div>
+            )}
+
+            {wx.phase === 'error' && <div className="alert alert-error">{wx.message}</div>}
+
+            <div className={styles.wxActions}>
+              {wx.phase === 'error' && (
+                <button type="button" className="btn" onClick={startWxLogin}>
+                  重新生成配对码
+                </button>
+              )}
+              <button type="button" className={`btn ${styles.submit}`} onClick={closeWxPanel}>
+                返回邮箱登录
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!(wx.phase === 'ready' || wx.phase === 'error') && (
         <form className={styles.card} onSubmit={onSubmit}>
           <div>
             <h2 className={styles.title}>{isRegister ? '创建账号' : '欢迎回来'}</h2>
@@ -153,6 +263,16 @@ export default function LoginPage() {
             {busy ? '处理中…' : isRegister ? '注 册' : '登 录'}
           </button>
 
+          <div className={styles.divider}><span>或</span></div>
+          <button
+            type="button"
+            className={`btn ${styles.wxBtn}`}
+            onClick={startWxLogin}
+            disabled={busy}
+          >
+            💬 微信扫码登录
+          </button>
+
           <p className={styles.foot}>
             {isRegister ? (
               <>
@@ -175,6 +295,7 @@ export default function LoginPage() {
             )}
           </p>
         </form>
+        )}
       </main>
     </div>
   )

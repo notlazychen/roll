@@ -176,6 +176,44 @@ Page({
       data: url,
       success: function () { util.toast('已复制服务地址') }
     })
+  },
+
+  /* ------------------------- 网页扫码登录 ------------------------- */
+
+  /** 在网页 roll.acgun.cn 登录页生成配对码，这里扫二维码或手输批准 */
+  webLogin() {
+    const self = this
+    wx.scanCode({
+      onlyFromCamera: false,
+      success(res) {
+        self.approveWebLogin(res.result)
+      },
+      fail() {
+        // 用户取消或没有二维码可扫：提供手输入口
+        wx.showModal({
+          title: '扫一扫登录网页',
+          editable: true,
+          placeholderText: '输入网页上的 8 位配对码',
+          confirmText: '批准',
+          success(r) {
+            if (r.confirm && r.content) self.approveWebLogin(r.content)
+          }
+        })
+      }
+    })
+  },
+
+  async approveWebLogin(raw) {
+    const res = await store.approveWebQr(raw)
+    if (!res.ok) {
+      util.toast(res.error)
+      return
+    }
+    wx.showModal({
+      title: '已批准',
+      content: '网页「' + (res.webUser || '你的账号') + '」的配对请求已通过，回到网页即可自动登录。',
+      showCancel: false
+    })
   }
 })
 

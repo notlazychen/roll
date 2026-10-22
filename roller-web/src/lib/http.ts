@@ -140,7 +140,8 @@ function extractError(data: unknown): string | null {
 }
 
 export const http = {
-  get: <T>(path: string, query?: QueryParams) => request<T>(path, { query }),
+  get: <T>(path: string, query?: QueryParams, anonymous = false) =>
+    request<T>(path, { query, anonymous }),
   post: <T>(path: string, body?: unknown, anonymous = false) =>
     request<T>(path, { method: 'POST', body, anonymous }),
   put: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body }),

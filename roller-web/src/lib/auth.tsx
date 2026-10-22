@@ -18,6 +18,8 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, nickName?: string) => Promise<void>
   logout: () => void
+  /** 微信扫码登录配对成功后：外部已拿到 token+user，直接落进全局状态 */
+  completeWxLogin: (token: string, user: User) => void
   /** 改完昵称等资料后同步到全局 */
   patchUser: (patch: Partial<User>) => void
 }
@@ -79,13 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  const completeWxLogin = useCallback((token: string, u: User) => {
+    setToken(token)
+    setUser(u)
+  }, [])
+
   const patchUser = useCallback((patch: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...patch } : prev))
   }, [])
 
   const value = useMemo<AuthState>(
-    () => ({ user, loading, login, register, logout, patchUser }),
-    [user, loading, login, register, logout, patchUser]
+    () => ({ user, loading, login, register, logout, completeWxLogin, patchUser }),
+    [user, loading, login, register, logout, completeWxLogin, patchUser]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

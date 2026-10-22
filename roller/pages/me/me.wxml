@@ -106,6 +106,15 @@
     </view>
 
     <view class="card-block">
+      <view class="card-title">账号</view>
+      <view class="set-row" bindtap="webLogin">
+        <text class="set-icon">💻</text>
+        <view class="flex1">
+          <view class="set-name">扫一扫登录网页</view>
+          <view class="set-sub">在网页版输入配对码或扫这里，免输密码</view>
+        </view>
+        <text class="set-arrow">›</text>
+      </view>
       <view class="set-row" bindtap="copyBaseUrl">
         <text class="set-icon">🔌</text>
         <view class="flex1">

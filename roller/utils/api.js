@@ -134,6 +134,20 @@ async function loginByDev(nickName, deviceKey) {
   return toError(res, '开发模式登录失败')
 }
 
+/**
+ * 批准网页扫码登录：把当前小程序登录态批给网页上的配对码。
+ * ticket 是 8 位配对码（可来自扫码内容或手动输入）。
+ */
+async function approveWebQr(ticket) {
+  const code = String(ticket || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+  if (code.length !== 8) return { ok: false, error: '配对码格式不对，应为 8 位字母数字' }
+  const res = await rawRequest('POST', '/api/auth/web-qr/' + encodeURIComponent(code) + '/approve', undefined, true)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    return { ok: true, webUser: res.data.webUser }
+  }
+  return toError(res, '批准失败')
+}
+
 function randomKey() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
@@ -263,6 +277,7 @@ module.exports = {
   ensureLogin,
   loginByWeChat,
   loginByDev,
+  approveWebQr,
   randomKey,
   call,
   callValue,
