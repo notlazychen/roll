@@ -1,0 +1,8 @@
+# 构建上下文里排除这些，避免几万个小文件传给 Docker daemon
+# （COPY . . 会读到它们，node_modules 尤其大）
+node_modules
+dist
+.vite
+*.log
+*.tsbuildinfo
+.git

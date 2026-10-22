@@ -1,0 +1,100 @@
+name: Build and Push Web Image
+
+# 前端静态产物打镜像并推送 Docker Hub。
+#
+# 为什么前端也要进镜像：
+#   线上是单域名同源部署 —— /api/* 走后端容器，其余由 nginx 吐静态文件。
+#   前端产物如果没有版本化的介质，就只能「本地 npm run build + scp 上传」，
+#   既不可回滚也不可追溯。打成镜像后，前后端用同一套发布模型：
+#   Actions 出镜像 → 服务器 pull → 按标签回滚。
+#
+# 触发条件：
+#   - 推送涉及 roller-web/** 或本 workflow（前后端独立触发，改后端不会重打前端）
+#   - 打 v* 标签
+#   - 手动触发
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'roller-web/**'
+      - '.github/workflows/web-publish.yml'
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: crazor6/roll-web
+  BUILD_CONTEXT: ./roller-web
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 先在本机跑一遍类型检查 —— Dockerfile 里的 npm run build 也会跑 tsc，
+      # 但在 CI 日志里单独一步的错误信息比埋在 docker build 输出里好读得多。
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ env.BUILD_CONTEXT }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.BUILD_CONTEXT }}
+        run: npm ci
+
+      - name: Type check
+        working-directory: ${{ env.BUILD_CONTEXT }}
+        run: npm run typecheck
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short,prefix=sha-
+            type=semver,pattern={{version}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.BUILD_CONTEXT }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Summary
+        run: |
+          {
+            echo "### 前端镜像已推送"
+            echo ""
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+            echo ""
+            echo "- digest: \`${{ steps.build.outputs.digest }}\`"
+            echo "- 提交: \`${{ github.sha }}\`"
+            echo ""
+            echo "服务器发布：在 \`/data/docker/roll\` 执行 \`./update-web.sh\`"
+          } >> "$GITHUB_STEP_SUMMARY"

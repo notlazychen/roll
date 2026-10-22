@@ -84,4 +84,12 @@ networks:
 #   compose 管的：在它的 volumes 里加
 #     - /data/docker/web:/var/www/web:ro
 #
-# 挂载是只读的（:ro）—— 容器只需要读文件，写权限留给 deploy-web.sh。
+# 挂载是只读的（:ro）—— 容器只需要读文件，写权限留给 update-web.sh。
+#
+# ------------------------------------------------------------------
+# 前端发布（镜像 crazor6/roll-web，由 .github/workflows/web-publish.yml 产出）
+#
+# 前端不跑容器，只是把静态文件装进镜像当「发布介质」。
+# 在 /data/docker/roll 下执行 ./update-web.sh 会 pull 该镜像、
+# 用 docker create + docker cp 把文件取到 /data/docker/web，
+# 再由上面那个 nginx 容器 serve。同样支持按标签回滚。
