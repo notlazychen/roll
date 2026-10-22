@@ -70,12 +70,18 @@ if [[ ! -f "$WEB_NEXT/index.html" ]]; then
   exit 1
 fi
 
-echo "==> 原子切换"
+echo "==> 原地更新（保留目录 inode，避免 bind mount 指向旧目录）"
+# 注意：nginx 以 bind mount 挂载 WEB_ROOT，目录 inode 不能换（mv/mkdir 都会换），
+# 只能清空内容后把新文件拷进去。
 rm -rf "$WEB_PREV"
+mkdir -p "$WEB_PREV"
 if [[ -d "$WEB_ROOT" ]]; then
-  mv "$WEB_ROOT" "$WEB_PREV"
+  cp -a "$WEB_ROOT"/. "$WEB_PREV"/ 2>/dev/null || true
+  find "$WEB_ROOT" -mindepth 1 -delete
+else
+  mkdir -p "$WEB_ROOT"
 fi
-mv "$WEB_NEXT" "$WEB_ROOT"
+cp -a "$WEB_NEXT"/. "$WEB_ROOT"/
 chmod -R a+rX "$WEB_ROOT"
 
 # 记录当前版本，方便下次看到「从哪个版本升上来的」
@@ -89,7 +95,8 @@ echo "==> 校验首页"
 if ! curl -fsS -m 5 -o /dev/null "$SITE_URL/"; then
   echo "❌ 首页不可访问，回滚到上一版本" >&2
   if [[ -d "$WEB_PREV" ]]; then
-    rm -rf "$WEB_ROOT" && mv "$WEB_PREV" "$WEB_ROOT"
+    find "$WEB_ROOT" -mindepth 1 -delete
+    cp -a "$WEB_PREV"/. "$WEB_ROOT"/
     echo "已回滚到 $CURRENT_TAG。" >&2
   else
     echo "没有可回滚的版本（首次发布）。检查 nginx 是否已挂载 /var/www/web。" >&2
