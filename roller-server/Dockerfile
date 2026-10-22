@@ -17,6 +17,11 @@ RUN dotnet publish RandomGroup.Api/RandomGroup.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
+# Npgsql 需要 libgssapi_krb5（.NET 10 基础镜像已不带）
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
+
 # 以非 root 运行
 RUN useradd -m -u 10001 appuser
 USER appuser
