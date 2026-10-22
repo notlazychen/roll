@@ -21,7 +21,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 COMPOSE_FILE="docker-compose.lighthouse.yml"
 IMAGE_REPO="crazor6/roll"
 TARGET_TAG="${1:-latest}"
-HEALTH_URL="http://127.0.0.1:8080/health"
+# compose 的 api 不映射宿主机端口（由 nginx 容器网络反代 roll:8080），
+# 所以健康检查直接打容器在 web 网络里的 IP，而不是 127.0.0.1
+API_CID="$(docker compose -f "$COMPOSE_FILE" ps -q api)"
+HEALTH_URL="http://$(docker inspect "$API_CID" --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'):8080/health"
 
 if [[ ! -f .env ]]; then
   echo "❌ 缺少 .env。先执行： cp .env.example .env  然后填好数据库密码和 Jwt__Key" >&2
