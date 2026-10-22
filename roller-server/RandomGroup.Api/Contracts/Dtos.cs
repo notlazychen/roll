@@ -11,11 +11,25 @@ public static class TimeMs
     public static long ToMs(this DateTimeOffset t) => t.ToUnixTimeMilliseconds();
     public static long? ToMs(this DateTimeOffset? t) => t?.ToUnixTimeMilliseconds();
 
-    public static DateTimeOffset FromMs(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms);
-    public static DateTimeOffset? FromMs(long? ms) => ms.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(ms.Value) : null;
+    /// <summary>
+    /// 毫秒 → 时间。必须转 UTC：Npgsql 只接受 offset=0 的值写 timestamptz，
+    /// 开发机在东八区时 FromUnixTimeMilliseconds 会带 +08:00，直接查库会炸。
+    /// （生产容器是 UTC，所以这个问题以前没暴露。）
+    /// </summary>
+    public static DateTimeOffset FromMs(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms).ToUniversalTime();
+    public static DateTimeOffset? FromMs(long? ms) => ms.HasValue ? FromMs(ms.Value) : null;
 }
 
-public record UserDto(long Id, string NickName, string? AvatarUrl, bool IsDevAccount, bool TagAutoEnabled);
+public record UserDto(
+    long Id,
+    string NickName,
+    string? AvatarUrl,
+    bool IsDevAccount,
+    bool TagAutoEnabled,
+    // 登录邮箱；纯微信账号为 null
+    string? Email = null,
+    // 是否已绑定微信（Web 端用来显示绑定状态）
+    bool WeChatBound = false);
 
 /* ------------------------- 账目 ------------------------- */
 

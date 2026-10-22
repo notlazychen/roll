@@ -193,8 +193,10 @@ public static class EntryEndpoints
         {
             var uid = ctx.User.GetUserId();
             var now = DateTimeOffset.Now;
-            var todayStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, now.Offset);
-            var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset);
+            // Npgsql 只接受 offset=0 的参数写/比 timestamptz，
+            // 本地时区算出的边界必须先转 UTC（时间点比较是绝对值，转了不影响结果）
+            var todayStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, now.Offset).ToUniversalTime();
+            var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, now.Offset).ToUniversalTime();
 
             var monthRows = await db.Entries.AsNoTracking()
                 .Where(e => e.UserId == uid && e.TradeAt >= monthStart)

@@ -170,6 +170,11 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("email");
+
                     b.Property<bool>("IsDevAccount")
                         .HasColumnType("boolean")
                         .HasColumnName("is_dev_account");
@@ -178,6 +183,12 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_login_at");
 
+                    b.Property<string>("NickKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("nick_key");
+
                     b.Property<string>("NickName")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -185,10 +196,14 @@ namespace RandomGroup.Api.Migrations
                         .HasColumnName("nick_name");
 
                     b.Property<string>("OpenId")
-                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("open_id");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("password_hash");
 
                     b.Property<bool>("TagAutoEnabled")
                         .ValueGeneratedOnAdd()
@@ -204,9 +219,19 @@ namespace RandomGroup.Api.Migrations
                     b.HasKey("Id")
                         .HasName("pk_ledger_users");
 
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ledger_users_email")
+                        .HasFilter("email IS NOT NULL");
+
+                    b.HasIndex("NickKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ledger_users_nick_key");
+
                     b.HasIndex("OpenId")
                         .IsUnique()
-                        .HasDatabaseName("ix_ledger_users_open_id");
+                        .HasDatabaseName("ix_ledger_users_open_id")
+                        .HasFilter("open_id IS NOT NULL");
 
                     b.ToTable("ledger_users", (string)null);
                 });

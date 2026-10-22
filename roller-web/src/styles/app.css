@@ -1,0 +1,115 @@
+/* ============================================================
+   全局布局与通用组件样式
+   变量定义见 tokens.css；这里只写具体形态，不重复定义颜色值。
+   ============================================================ */
+
+/* --------------------------- 通用 --------------------------- */
+
+.full-loading {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --------------------------- 卡片与按钮 --------------------------- */
+
+.card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 0 20px;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--primary-grad);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(31, 138, 112, 0.25);
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(31, 138, 112, 0.3);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: var(--card);
+  color: var(--text-sub);
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: none;
+}
+
+.btn-danger {
+  background: #fdeceA;
+  color: var(--expense);
+  box-shadow: none;
+}
+
+/* --------------------------- 提示条 --------------------------- */
+
+.alert {
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.alert-error {
+  background: #fdecea;
+  color: #b3261e;
+}
+
+.alert-hint {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.empty {
+  padding: 56px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}

@@ -1,0 +1,276 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.42);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 60;
+  animation: fade 0.16s ease-out;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: 32px;
+  padding: 28px 32px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 24px 60px rgba(0, 22, 69, 0.18);
+  animation: pop 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f3f7;
+  color: var(--text-sub);
+  font-size: 20px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
+.close:hover {
+  background: #e8eaef;
+  color: var(--text);
+}
+
+/* --------------------------- 金额 --------------------------- */
+
+.amountRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.currency {
+  font-size: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.amountInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+}
+
+.amountInput::placeholder {
+  color: #d5d8de;
+}
+
+.cRed {
+  color: var(--expense);
+}
+
+.cGreen {
+  color: var(--income);
+}
+
+/* --------------------------- 收支切换 --------------------------- */
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f2f3f7;
+  border-radius: var(--r-pill);
+}
+
+.segment {
+  flex: 1;
+  height: 36px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-sub);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.segmentOn {
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(15, 28, 45, 0.08);
+}
+
+/* --------------------------- 字段 --------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-sub);
+}
+
+.field input,
+.field select {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: #fafbfc;
+  font-size: 14px;
+  color: var(--text);
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-sub);
+  transition: all 0.14s;
+}
+
+.chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.chipOn {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tagHint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--primary-soft);
+  font-size: 12px;
+  color: var(--primary);
+}
+
+.tagHint > span {
+  font-weight: 600;
+}
+
+.tagHint i {
+  font-style: normal;
+  background: rgba(31, 138, 112, 0.14);
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+}
+
+/* --------------------------- 底部按钮 --------------------------- */
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.del {
+  flex: 0 0 auto;
+  height: 48px;
+  padding: 0 22px;
+}
+
+.save {
+  flex: 1;
+  height: 48px;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 560px) {
+  .overlay {
+    padding: 0;
+    place-items: end center;
+  }
+
+  .dialog {
+    max-width: none;
+    border-radius: 24px 24px 0 0;
+    padding: 22px 20px 26px;
+    max-height: 92vh;
+  }
+
+  .amountInput {
+    font-size: 38px;
+  }
+
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,211 @@
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #eef0f4;
+  border-radius: var(--r-pill);
+  width: fit-content;
+  margin-bottom: 18px;
+}
+
+.tab {
+  height: 34px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-sub);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.tabOn {
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(15, 28, 45, 0.08);
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.panel {
+  padding: 22px 24px 26px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panelTitle {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.panelHint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* --------------------------- 新增一行 --------------------------- */
+
+.addRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.input,
+.select {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: #fafbfc;
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.select {
+  min-width: 140px;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+/* --------------------------- 选项 chip --------------------------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 6px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.presetTag {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  background: #f2f3f7;
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+}
+
+.chipBtn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  transition: background 0.14s, color 0.14s;
+}
+
+.chipBtn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.chipDel:hover {
+  background: #fdecea;
+  color: var(--expense);
+}
+
+/* --------------------------- 渠道分组 --------------------------- */
+
+.channelGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.channelGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.channelParent {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+  padding-left: 2px;
+}
+
+@media (max-width: 960px) {
+  .panel {
+    padding: 18px 16px 20px;
+    border-radius: 18px;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1;
+    height: 32px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 560px) {
+  .addRow {
+    gap: 8px;
+  }
+
+  .input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .select {
+    flex: 1 1 100%;
+  }
+
+  .addRow .btn {
+    width: 100%;
+  }
+
+  .chip {
+    height: 34px;
+    font-size: 13px;
+  }
+}

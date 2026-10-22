@@ -28,10 +28,13 @@ public static class ReportEndpoints
             var uid = ctx.User.GetUserId();
             var zone = ZoneOf(tz);
 
+            // 边界按客户端时区切日之后，必须转 UTC 再进 SQL：
+            // Npgsql 只接受 offset=0 的参数比较 timestamptz（开发机东八区必炸，生产容器 UTC 没暴露）
             var end = to.HasValue ? FromMs(to.Value) : DateTimeOffset.UtcNow;
             var start = from.HasValue
                 ? FromMs(from.Value)
-                : StartOfMonth(TimeZoneInfo.ConvertTime(end, zone));
+                : StartOfMonth(TimeZoneInfo.ConvertTime(end, zone)).ToUniversalTime();
+            end = end.ToUniversalTime();
 
             if (end <= start) throw ApiException.BadRequest("结束时间必须晚于开始时间");
             if ((end - start).TotalDays > 400) throw ApiException.BadRequest("统计区间不能超过一年");
@@ -100,7 +103,8 @@ public static class ReportEndpoints
             var end = to.HasValue ? FromMs(to.Value) : DateTimeOffset.UtcNow;
             var start = from.HasValue
                 ? FromMs(from.Value)
-                : StartOfMonth(TimeZoneInfo.ConvertTime(end, zone));
+                : StartOfMonth(TimeZoneInfo.ConvertTime(end, zone)).ToUniversalTime();
+            end = end.ToUniversalTime();
 
             var rows = await db.Entries.AsNoTracking()
                 .Where(e => e.UserId == uid && e.Type == EntryTypes.Expense &&

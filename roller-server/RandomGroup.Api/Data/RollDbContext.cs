@@ -18,12 +18,21 @@ public class RollDbContext : DbContext
         {
             e.ToTable("ledger_users");
             e.HasKey(x => x.Id);
-            e.Property(x => x.OpenId).HasMaxLength(128).IsRequired();
+            // 三种身份字段都可空：Web 账号没有 openid，纯微信账号没有邮箱
+            e.Property(x => x.OpenId).HasMaxLength(128);
             e.Property(x => x.UnionId).HasMaxLength(128);
+            e.Property(x => x.Email).HasMaxLength(256);
+            e.Property(x => x.PasswordHash).HasMaxLength(256);
             e.Property(x => x.NickName).HasMaxLength(64).IsRequired();
+            e.Property(x => x.NickKey).HasMaxLength(64).IsRequired();
             e.Property(x => x.AvatarUrl).HasMaxLength(512);
             e.Property(x => x.TagAutoEnabled).HasDefaultValue(true);
-            e.HasIndex(x => x.OpenId).IsUnique();
+
+            // 唯一约束只对有值的行生效（PostgreSQL 里 NULL 不参与唯一比较，
+            // 但仍显式过滤，避免换成别的数据库时行为不一致）
+            e.HasIndex(x => x.OpenId).IsUnique().HasFilter("open_id IS NOT NULL");
+            e.HasIndex(x => x.Email).IsUnique().HasFilter("email IS NOT NULL");
+            e.HasIndex(x => x.NickKey).IsUnique();
         });
 
         b.Entity<LedgerOption>(e =>

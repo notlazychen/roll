@@ -1,12 +1,28 @@
 namespace RandomGroup.Api.Data;
 
-/// <summary>用户（一个小程序 openid 对应一条记录）</summary>
+/// <summary>
+/// 用户 —— 平台的「中心账号」。
+///
+/// 一个账号可以同时有多种登录方式，全部指向同一个 uid：
+///   · 邮箱 + 密码：Web 端注册登录（Email / PasswordHash）
+///   · 微信 openid：小程序静默登录（OpenId / UnionId）
+/// 三种身份字段都可空，但至少要有一种。小程序首次微信登录会直接建号，
+/// 之后用户在 Web 端登录同一账号即可看到同一份数据。
+/// </summary>
 public class LedgerUser
 {
     public long Id { get; set; }
-    public string OpenId { get; set; } = string.Empty;
+    /// <summary>微信 openid。未绑定微信的 Web 账号为 null</summary>
+    public string? OpenId { get; set; }
     public string? UnionId { get; set; }
+    /// <summary>登录邮箱（小写存储）。未注册邮箱的纯微信账号为 null</summary>
+    public string? Email { get; set; }
+    /// <summary>PBKDF2 哈希，格式 v1$迭代次数$盐(base64)$子键(base64)</summary>
+    public string? PasswordHash { get; set; }
+    /// <summary>对外展示的名字。Web 账号默认取注册邮箱的 @ 前缀</summary>
     public string NickName { get; set; } = string.Empty;
+    /// <summary>昵称唯一（不含扩展 mark），用于「我的」页展示与将来的 @ 提及</summary>
+    public string NickKey { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
     /// <summary>开发模式登录产生的账号（仅本地调试用）</summary>
     public bool IsDevAccount { get; set; }
@@ -14,6 +30,9 @@ public class LedgerUser
     public bool TagAutoEnabled { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset LastLoginAt { get; set; }
+
+    /// <summary>是否可以通过邮箱密码登录</summary>
+    public bool HasPassword => !string.IsNullOrEmpty(Email) && !string.IsNullOrEmpty(PasswordHash);
 }
 
 /// <summary>

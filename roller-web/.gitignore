@@ -1,0 +1,12 @@
+# 依赖与产物（构建在 CI / 本地进行，不进仓库）
+node_modules/
+dist/
+
+# 构建缓存
+*.tsbuildinfo
+.vite/
+
+# 本地环境变量与日志
+.env
+.env.local
+*.log

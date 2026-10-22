@@ -1,5 +1,9 @@
 # Lighthouse 单机部署（roll.acgun.cn）
 # ------------------------------------------------------------------
+# 前后端同域：一个域名、一张证书、不跨域。
+#   https://roll.acgun.cn/api/*  -> 本文件里的 roll 容器（后端）
+#   https://roll.acgun.cn/*      -> nginx 静态目录 /var/www/web（Web 前端）
+#
 # 与 docker-compose.yml 的区别：
 #   1. PostgreSQL 数据通过 bind mount 持久化到宿主机 /data/docker/pgsql/
 #   2. api 容器命名为 roll，只加入外部网络 web，不映射宿主机端口
@@ -70,3 +74,14 @@ networks:
   web:
     external: true
     name: web
+
+# nginx 不在本文件里管（它跑在 /data/docker/nginx，独立容器），
+# 但前端静态目录需要挂进它，否则容器里看不到产物。
+# 首次部署时给 nginx 容器加一条挂载即可（一次性操作）：
+#
+#   docker run 启动的：在启动参数里加
+#     -v /data/docker/web:/var/www/web:ro
+#   compose 管的：在它的 volumes 里加
+#     - /data/docker/web:/var/www/web:ro
+#
+# 挂载是只读的（:ro）—— 容器只需要读文件，写权限留给 deploy-web.sh。

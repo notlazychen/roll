@@ -44,6 +44,8 @@ builder.Services.Configure<AuthOptions>(config.GetSection("Auth"));
 
 builder.Services.AddScoped<OptionSourceService>();
 builder.Services.AddScoped<TagService>();
+builder.Services.AddScoped<AccountService>();
+builder.Services.AddSingleton<AccountService.LoginThrottle>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddHttpClient<WeChatClient>(c => c.Timeout = TimeSpan.FromSeconds(10));
 
@@ -127,11 +129,36 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-if (isDev)
+/* --------------------------- CORS（跨域访问） --------------------------- */
+//
+// 线上是「单域名同源」部署：Web 前端和 /api 都在 roll.acgun.cn，
+// 浏览器根本不会触发跨域，所以生产环境的 CORS 其实用不上。
+//
+// 那为什么还留着？
+//   · 本地开发：前端跑在 5173，接口在 5235，必须允许跨域
+//   · 万一以后把前端挪到 CDN 或别的子域，改配置即可，不用改代码
+//
+// 白名单走配置 Cors:Origins（数组）；不配置时：
+//   · 开发环境放开任意来源（方便本地随意切端口）
+//   · 生产环境回落到内置的正式域名，避免「忘了配就全站调不通」
+var corsOrigins = config.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
+if (corsOrigins.Length == 0 && !isDev)
 {
-    builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
-        p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+    corsOrigins = new[] { "https://roll.acgun.cn" };
 }
+
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+{
+    if (isDev || corsOrigins.Length == 0)
+    {
+        // AllowAnyOrigin 与 AllowCredentials 不能同时用，这里本来也不依赖 Cookie
+        p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    }
+    else
+    {
+        p.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod();
+    }
+}));
 
 builder.Services.AddHealthChecks();
 
@@ -141,11 +168,14 @@ var app = builder.Build();
 
 app.UseMiddleware<ApiExceptionMiddleware>();
 
+// CORS 必须排在 UseAuthentication/UseAuthorization 之前，
+// 否则预检请求（OPTIONS）会先被鉴权的 401 拦下来
+app.UseCors();
+
 if (isDev)
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "随机小队 API v1"));
-    app.UseCors();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "记账 API v1"));
 }
 
 app.UseAuthentication();
