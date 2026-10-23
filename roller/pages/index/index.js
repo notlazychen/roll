@@ -8,6 +8,7 @@ Page({
     loggedIn: false,
     loading: true,
     loadingMore: false,
+    loginError: '',
 
     // 当前查看的月份
     year: 0,
@@ -111,7 +112,7 @@ Page({
   /* ------------------------- 加载 ------------------------- */
 
   async refresh(done) {
-    this.setData({ loading: true })
+    this.setData({ loading: true, loginError: '' })
 
     let loggedIn = store.isLoggedIn()
     if (!loggedIn) {
@@ -135,6 +136,40 @@ Page({
 
     this.setData({ loggedIn: true, loading: false })
     if (done) done()
+  },
+
+  /* ------------------------- 登录界面 ------------------------- */
+
+  /** 登录界面的「微信一键登录」：用户主动点击，可越过本机登出标记 */
+  async loginWechat() {
+    this.setData({ loginError: '' })
+    wx.showLoading({ title: '登录中', mask: true })
+    try {
+      await store.ensureLogin(true)
+    } catch (e) {
+      wx.hideLoading()
+      // 陌生微信：去账号绑定页（绑定已有账号或创建新账号）
+      if (e && e.needLink) {
+        wx.navigateTo({ url: '/pages/account-link/account-link' })
+        return
+      }
+      this.setData({ loginError: (e && e.message) || '登录失败，请稍后重试' })
+      return
+    }
+    wx.hideLoading()
+    if (!store.isLoggedIn()) {
+      this.setData({ loginError: '登录失败，请稍后重试' })
+      return
+    }
+    util.toast('登录成功', 'success')
+    getApp().globalData.dirty = false
+    this._loaded = true
+    this.refresh()
+  },
+
+  /** 登录界面的「用邮箱账号登录」 */
+  goEmailLogin() {
+    wx.navigateTo({ url: '/pages/account-link/account-link' })
   },
 
   /** 陌生微信引导：绑定已有邮箱账号（保留账目）或创建新账号 */

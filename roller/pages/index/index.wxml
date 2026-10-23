@@ -69,9 +69,15 @@
       >收入</view>
     </view>
 
-    <!-- ============ 未登录提示 ============ -->
-    <view class="alert alert-hint" wx:if="{{!loggedIn && !loading}}" bindtap="goMe">
-      还没有登录，点这里登录后开始记账 ›
+    <!-- ============ 登录界面（未登录时显示） ============ -->
+    <view class="panel login-panel" wx:if="{{!loggedIn && !loading}}">
+      <view class="login-icon">🐹</view>
+      <view class="login-title">登录后开始记账</view>
+      <view class="t-tiny">账目按账号隔离，云端同步；支持微信一键登录或邮箱登录</view>
+      <view class="btn btn-primary mt16" bindtap="loginWechat">微信一键登录</view>
+      <view class="btn btn-ghost mt12" bindtap="goEmailLogin">用邮箱账号登录</view>
+      <view class="alert alert-error mt16" wx:if="{{loginError}}">{{loginError}}</view>
+      <view class="t-tiny mt12" bindtap="goMe">账号设置与退出登录在「我的」页 ›</view>
     </view>
 
     <!-- ============ 明细列表 ============ -->

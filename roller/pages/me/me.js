@@ -92,6 +92,11 @@ Page({
       await store.ensureLogin(true)
     } catch (e) {
       wx.hideLoading()
+      // 陌生微信：服务端不会静默建号，去账号绑定页（绑定已有账号或创建新账号）
+      if (e && e.needLink) {
+        wx.navigateTo({ url: '/pages/account-link/account-link' })
+        return
+      }
       this.setData({ loginError: (e && e.message) || '登录失败' })
       return
     }
@@ -105,12 +110,10 @@ Page({
   },
 
   async logout() {
-    const ok = await util.confirm('退出登录', '将清除本机登录状态，云端账目不受影响。下次进入会重新用微信登录。', '退出')
+    const ok = await util.confirm('退出登录', '将清除本机登录状态，云端账目不受影响。退出后停留在登录界面，重新登录即可找回账号。', '退出')
     if (!ok) return
     store.logout()
     getApp().globalData.dirty = true
-    // 只刷当前页还不够：底栏的明细/图表还留着上一个账号的数据，
-    // 因此退出后直接回到明细页并重启到登录前状态
     util.toast('已退出登录')
     setTimeout(function () {
       wx.reLaunch({ url: '/pages/index/index' })

@@ -37,6 +37,26 @@ function clearSession() {
   } catch (e) {}
 }
 
+/* ------------------------- 本机登出标记 -------------------------
+ * 微信登录是静默的：不清标记的话，退出后下一次 ensureLogin 又会
+ * 把同一个 openid 秒登回来，表现为「退出登录没用」。
+ * 标记存在期间：启动/页面的自动登录一律跳过；只有用户在登录界面
+ * 主动点按钮（force 登录）才清标记重新登录。
+ */
+const LOGGED_OUT_KEY = 'lg_logged_out_v1'
+
+function markLoggedOut() {
+  try { wx.setStorageSync(LOGGED_OUT_KEY, '1') } catch (e) {}
+}
+
+function clearLoggedOut() {
+  try { wx.removeStorageSync(LOGGED_OUT_KEY) } catch (e) {}
+}
+
+function hasLoggedOut() {
+  try { return !!wx.getStorageSync(LOGGED_OUT_KEY) } catch (e) { return false }
+}
+
 /* ------------------------- 网络错误文案 ------------------------- */
 
 function networkMessage(err) {
@@ -122,6 +142,7 @@ async function loginByWeChat(code, profile) {
     }
     if (res.data.ok) {
       clearPendingLink()
+      clearLoggedOut()
       return { ok: true, user: storeLoginResult(res.data), body: res.data }
     }
   }
@@ -172,6 +193,7 @@ async function loginByEmail(email, password) {
   const res = await rawRequest('POST', '/api/auth/login', { email: email, password: password }, false)
   if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
     clearPendingLink()
+    clearLoggedOut()
     return { ok: true, user: storeLoginResult(res.data) }
   }
   return toError(res, '登录失败')
@@ -186,6 +208,7 @@ async function claimWeChat(payload) {
   const res = await rawRequest('POST', '/api/auth/wechat/claim', payload, false)
   if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
     clearPendingLink()
+    clearLoggedOut()
     return { ok: true, user: storeLoginResult(res.data), isNew: !!res.data.isNew }
   }
   return toError(res, '认领失败')
@@ -229,6 +252,12 @@ function ensureLogin(force) {
   if (!force && getToken() && getUser()) {
     return Promise.resolve(getUser())
   }
+  // 用户主动退出过：自动登录一律拒绝，避免「退出了又被秒登回来」。
+  // 只有登录界面里用户主动点按钮（force=true）才清标记重新登录。
+  if (!force && hasLoggedOut()) {
+    return Promise.reject(new Error('已退出登录'))
+  }
+  if (force) clearLoggedOut()
   if (loginPromise) return loginPromise
 
   loginPromise = (async function () {
@@ -283,9 +312,11 @@ function ensureLogin(force) {
   return loginPromise
 }
 
-/** 主动登出：清掉本机 token，下次进入会重新走微信登录 */
+/** 主动登出：清掉本机 token，并打上登出标记——下次启动不再自动微信登录，
+ *  停留在登录界面等用户手动登录 */
 function logout() {
   clearSession()
+  markLoggedOut()
 }
 
 /* ------------------------- 节流提示 ------------------------- */
@@ -306,6 +337,10 @@ async function call(method, path, data, retried) {
   const res = await rawRequest(method, path, data, true)
 
   if (res.status === 401 && !retried) {
+    // 用户主动登出后的请求失败不算「登录失效」，不要偷偷重新登录
+    if (hasLoggedOut()) {
+      return { ok: false, error: '未登录，请先登录' }
+    }
     try {
       await ensureLogin(true)
     } catch (e) {
@@ -349,6 +384,9 @@ module.exports = {
   setUser,
   clearSession,
   logout,
+  hasLoggedOut,
+  markLoggedOut,
+  clearLoggedOut,
   ensureLogin,
   loginByWeChat,
   loginByEmail,

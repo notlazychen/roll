@@ -278,3 +278,21 @@
   line-height: 1;
   margin-top: -4rpx;
 }
+
+/* ---------- 登录界面 ---------- */
+.login-panel {
+  text-align: center;
+  padding: 48rpx 32rpx 40rpx;
+}
+
+.login-icon {
+  font-size: 88rpx;
+  line-height: 1.2;
+}
+
+.login-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--ink-1);
+  margin-top: 12rpx;
+}
