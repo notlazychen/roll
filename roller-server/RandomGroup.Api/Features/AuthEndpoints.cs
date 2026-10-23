@@ -23,8 +23,8 @@ public record UpdateProfileRequest(string? NickName, string? AvatarUrl, bool? Ta
 
 /* ------------------------- Web 端邮箱账号 ------------------------- */
 
-/// <summary>注册：邮箱 + 密码，昵称可选（不填就用邮箱前缀）</summary>
-public record RegisterRequest(string Email, string Password, string? NickName);
+/// <summary>注册：邮箱 + 验证码 + 密码，昵称可选（不填就用邮箱前缀）</summary>
+public record RegisterRequest(string Email, string Password, string? NickName, string? Code = null);
 
 /// <summary>登录：邮箱 + 密码</summary>
 public record LoginRequest(string Email, string Password);
@@ -62,6 +62,9 @@ public static class AuthEndpoints
             RollDbContext db,
             TokenService tokens,
             AccountService accounts,
+            EmailCodeService emailCodes,
+            IHostEnvironment env,
+            Microsoft.Extensions.Options.IOptions<AuthOptions> authOpts,
             CancellationToken ct) =>
         {
             if (!AccountService.IsValidEmail(req.Email))
@@ -78,6 +81,13 @@ public static class AuthEndpoints
 
             if (await db.Users.AnyAsync(u => u.Email == email, ct))
                 throw ApiException.BadRequest("该邮箱已注册，请直接登录");
+
+            // 注册必须先通过发到该邮箱的验证码（purpose=register），验证通过才建号。
+            // 开发便利：Development 且允许 dev 登录时，未带验证码的注册直接放行（契约测试 / 本地联调）。
+            var devSkipCode = env.IsDevelopment() && authOpts.Value.AllowDevLogin &&
+                              string.IsNullOrWhiteSpace(req.Code);
+            if (!devSkipCode)
+                await emailCodes.ConsumeAsync(email, EmailCodeService.Purposes.Register, req.Code, ct);
 
             var now = DateTimeOffset.UtcNow;
 

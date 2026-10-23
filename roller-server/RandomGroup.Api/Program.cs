@@ -39,6 +39,7 @@ builder.Services.AddDbContext<RollDbContext>(options =>
 builder.Services.Configure<JwtOptions>(config.GetSection("Jwt"));
 builder.Services.Configure<WeChatOptions>(config.GetSection("WeChat"));
 builder.Services.Configure<AuthOptions>(config.GetSection("Auth"));
+builder.Services.Configure<MailOptions>(config.GetSection("Mail"));
 
 /* --------------------------- 业务服务 --------------------------- */
 
@@ -47,6 +48,8 @@ builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddSingleton<AccountService.LoginThrottle>();
 builder.Services.AddSingleton<AccountLinkService>();
+builder.Services.AddSingleton<MailSender>();
+builder.Services.AddSingleton<EmailCodeService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddHttpClient<WeChatClient>(c => c.Timeout = TimeSpan.FromSeconds(10));
 
@@ -205,6 +208,7 @@ if (config.GetValue("Database:AutoMigrate", false))
 
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapAuthEndpoints();
+app.MapAccountSecurityEndpoints();
 app.MapWebQrLoginEndpoints();
 app.MapEntryEndpoints();
 app.MapOptionEndpoints();
