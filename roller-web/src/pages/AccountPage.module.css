@@ -16,6 +16,21 @@
   margin: 0;
 }
 
+.back {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  padding: 4px 8px 4px 0;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.back:hover {
+  color: var(--primary);
+}
+
 .panel {
   padding: 22px 24px;
   display: flex;

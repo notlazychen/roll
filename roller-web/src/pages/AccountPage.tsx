@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { authApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { ApiError } from '../lib/http'
@@ -15,6 +16,7 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
  */
 export default function AccountPage() {
   const { user, patchUser } = useAuth()
+  const navigate = useNavigate()
 
   /* ------------------------- 解绑微信 ------------------------- */
 
@@ -51,6 +53,9 @@ export default function AccountPage() {
 
   return (
     <div className={styles.page}>
+      <button type="button" className={styles.back} onClick={() => navigate(-1)}>
+        ‹ 返回
+      </button>
       <h2 className={styles.title}>账号</h2>
 
       <div className={`card ${styles.panel}`}>

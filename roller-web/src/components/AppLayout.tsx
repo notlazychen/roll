@@ -96,7 +96,16 @@ export default function AppLayout() {
         {/* 站点标识（弱化，只在侧边栏底部作为落款） */}
         <div className="sidebar-foot">哈姆斯特 · 仓鼠之家</div>
 
-        <div className="user-card">
+        {/* 用户卡：点击进入账号管理（绑定微信/邮箱、退出登录在页内） */}
+        <div
+          className="user-card is-clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/account')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') navigate('/account')
+          }}
+        >
           {user?.avatarUrl ? (
             <img className="avatar" src={user.avatarUrl} alt="" />
           ) : (
@@ -111,7 +120,10 @@ export default function AppLayout() {
           <button
             type="button"
             className="icon-btn"
-            onClick={onLogout}
+            onClick={(e) => {
+              e.stopPropagation()
+              onLogout()
+            }}
             title="退出登录"
             aria-label="退出登录"
           >

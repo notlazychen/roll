@@ -100,6 +100,21 @@
   box-shadow: var(--shadow-card);
 }
 
+/* 用户卡作为账号管理入口：整卡可点 */
+.user-card.is-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.user-card.is-clickable:hover {
+  box-shadow: var(--shadow-card), 0 0 0 2px var(--primary-soft);
+}
+
+.user-card.is-clickable:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .avatar {
   width: 36px;
   height: 36px;
