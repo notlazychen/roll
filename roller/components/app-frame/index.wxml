@@ -1,0 +1,65 @@
+<!-- 顶部条：与 Web 移动端 .mobile-bar 一致 -->
+<view
+  class="mobile-bar"
+  style="padding-top: {{statusBarHeight}}px; height: {{statusBarHeight + navHeight}}px;"
+>
+  <view class="bar-left">
+    <view wx:if="{{mode === 'menu'}}" class="burger" bindtap="openDrawer">
+      <view class="burger-line"></view>
+      <view class="burger-line"></view>
+      <view class="burger-line"></view>
+    </view>
+    <view wx:else class="back" bindtap="goBack">‹</view>
+    <text class="bar-title">{{mode === 'menu' ? '记账' : title}}</text>
+  </view>
+  <text class="bar-brand" style="margin-right: {{brandRight}}px;">哈姆斯特</text>
+</view>
+
+<!-- 抽屉遮罩 -->
+<view class="drawer-mask" wx:if="{{drawerOpen}}" bindtap="closeDrawer"></view>
+
+<!-- 抽屉：与 Web 的 .sidebar 移动端形态一致 -->
+<view class="drawer {{drawerOpen ? 'drawer-open' : ''}}" catchtap="noop">
+  <view class="drawer-scroll" style="padding-top: {{statusBarHeight + 12}}px;">
+
+    <view class="drawer-head">
+      <view class="tool-badge">🐹</view>
+      <text class="tool-name">记账</text>
+    </view>
+
+    <view class="nav-label">当前工具</view>
+    <view class="nav-group">
+      <view
+        wx:for="{{navs}}"
+        wx:key="key"
+        class="nav-item {{active === item.key ? 'nav-on' : ''}}"
+        data-key="{{item.key}}"
+        data-url="{{item.url}}"
+        bindtap="goNav"
+      >
+        <text class="nav-icon">{{item.icon}}</text>
+        <text class="nav-text">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="drawer-spacer"></view>
+
+    <view class="drawer-foot">哈姆斯特 · 仓鼠之家</view>
+
+    <view class="user-card" bindtap="goMe">
+      <view class="avatar">
+        <image wx:if="{{user.avatarUrl}}" class="avatar-img" src="{{user.avatarUrl}}" mode="aspectFill" />
+        <text wx:else>{{user.initial}}</text>
+      </view>
+      <view class="user-info">
+        <text class="user-name">{{user.name || '未登录'}}</text>
+        <text class="user-sub">{{user.sub}}</text>
+      </view>
+      <text class="user-arrow">›</text>
+    </view>
+
+  </view>
+</view>
+
+<!-- 页面内容 -->
+<slot />

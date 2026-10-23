@@ -1,0 +1,76 @@
+<app-frame mode="back" title="账号">
+  <view class="page">
+
+    <!-- ============ 待认领：陌生微信 ============ -->
+    <block wx:if="{{hasTicket}}">
+      <view class="panel">
+        <text class="panel-title">绑定微信身份</text>
+        <view class="t-tiny mt8">这个微信还没有关联的账号。可以绑定已有的邮箱账号（原账号的账目会保留），或直接创建一个新账号。</view>
+
+        <view class="seg mt16">
+          <view class="seg-item {{tab === 'link' ? 'seg-on' : ''}}" bindtap="switchTab" data-tab="link">绑定已有账号</view>
+          <view class="seg-item {{tab === 'create' ? 'seg-on' : ''}}" bindtap="switchTab" data-tab="create">创建新账号</view>
+        </view>
+
+        <!-- 绑定已有邮箱账号 -->
+        <block wx:if="{{tab === 'link'}}">
+          <view class="field">
+            <view class="field-label">邮箱</view>
+            <input class="input" type="text" value="{{email}}" placeholder="you@example.com"
+                   bindinput="onEmail" confirm-type="next" />
+          </view>
+          <view class="field">
+            <view class="field-label">密码</view>
+            <input class="input" type="text" password value="{{password}}" placeholder="账号密码"
+                   bindinput="onPassword" confirm-type="done" />
+          </view>
+          <view class="t-tiny mt8">验证通过后，这个微信与该邮箱账号合并为同一个账号，历史账目全部保留。</view>
+          <view class="btn btn-primary mt16 {{busy ? 'btn-disabled' : ''}}" bindtap="submitLink">
+            {{busy ? '绑定中…' : '绑定并登录'}}
+          </view>
+        </block>
+
+        <!-- 创建新账号 -->
+        <block wx:else>
+          <view class="field">
+            <view class="field-label">昵称（可选）</view>
+            <input class="input" type="text" value="{{nickName}}" placeholder="默认随机分配"
+                   bindinput="onNickName" confirm-type="done" />
+          </view>
+          <view class="t-tiny mt8">创建后随时可以在「我的」里补设密码，用邮箱在网页端登录同一个账号。</view>
+          <view class="btn btn-primary mt16 {{busy ? 'btn-disabled' : ''}}" bindtap="submitCreate">
+            {{busy ? '创建中…' : '创建账号'}}
+          </view>
+        </block>
+
+        <view class="alert alert-error mt16" wx:if="{{error}}">{{error}}</view>
+      </view>
+    </block>
+
+    <!-- ============ 无票据：纯邮箱登录 ============ -->
+    <block wx:else>
+      <view class="panel">
+        <text class="panel-title">邮箱账号登录</text>
+        <view class="t-tiny mt8">用注册时的邮箱和密码登录。登录后可在「我的 → 账号」里绑定微信。</view>
+
+        <view class="field">
+          <view class="field-label">邮箱</view>
+          <input class="input" type="text" value="{{email}}" placeholder="you@example.com"
+                 bindinput="onEmail" confirm-type="next" />
+        </view>
+        <view class="field">
+          <view class="field-label">密码</view>
+          <input class="input" type="text" password value="{{password}}" placeholder="账号密码"
+                 bindinput="onPassword" confirm-type="done" />
+        </view>
+
+        <view class="btn btn-primary mt16 {{busy ? 'btn-disabled' : ''}}" bindtap="submitEmailLogin">
+          {{busy ? '登录中…' : '登录'}}
+        </view>
+
+        <view class="alert alert-error mt16" wx:if="{{error}}">{{error}}</view>
+      </view>
+    </block>
+
+  </view>
+</app-frame>

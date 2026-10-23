@@ -15,11 +15,15 @@ public sealed class WeChatClient
 {
     private readonly HttpClient _http;
     private readonly WeChatOptions _opt;
+    private readonly IHostEnvironment _env;
+    private readonly AuthOptions _auth;
 
-    public WeChatClient(HttpClient http, IOptions<WeChatOptions> opt)
+    public WeChatClient(HttpClient http, IOptions<WeChatOptions> opt, IHostEnvironment env, IOptions<AuthOptions> auth)
     {
         _http = http;
         _opt = opt.Value;
+        _env = env;
+        _auth = auth.Value;
     }
 
     public bool IsConfigured =>
@@ -27,6 +31,18 @@ public sealed class WeChatClient
 
     public async Task<WeChatSession> Code2SessionAsync(string code, CancellationToken ct)
     {
+        // 测试后门：仅 Development 且显式开启 dev 登录时生效。
+        // code 形如 "dev-code:<openId>" 直接返回指定 openid，
+        // 让契约测试能走通 /wechat、/bind-wechat 等真实微信链路。
+        if (_env.IsDevelopment() && _auth.AllowDevLogin &&
+            code.StartsWith("dev-code:", StringComparison.Ordinal))
+        {
+            var oid = code["dev-code:".Length..].Trim();
+            if (oid.Length == 0)
+                throw ApiException.BadRequest("测试 code 缺少 openid");
+            return new WeChatSession(oid, null);
+        }
+
         if (!IsConfigured)
             throw ApiException.BadRequest(
                 "服务端尚未配置微信 AppId / AppSecret，暂时无法完成微信登录");

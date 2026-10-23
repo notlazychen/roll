@@ -46,6 +46,7 @@ builder.Services.AddScoped<OptionSourceService>();
 builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddSingleton<AccountService.LoginThrottle>();
+builder.Services.AddSingleton<AccountLinkService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddHttpClient<WeChatClient>(c => c.Timeout = TimeSpan.FromSeconds(10));
 

@@ -14,7 +14,12 @@ Page({
     env: { baseUrl: '' },
 
     showName: false,
-    nameInput: ''
+    nameInput: '',
+
+    showPwd: false,
+    pwdEmail: '',
+    pwdPass: '',
+    pwdBusy: false
   },
 
   onShow() {
@@ -56,7 +61,9 @@ Page({
         name: me.name,
         avatarUrl: me.avatarUrl,
         initial: util.initialOf(me.name || '账'),
-        tagAutoEnabled: me.tagAutoEnabled
+        tagAutoEnabled: me.tagAutoEnabled,
+        email: me.email || '',
+        wechatBound: !!me.weChatBound
       },
       stats: {
         entryCount: (meRes && meRes.stats && meRes.stats.entryCount) || 0,
@@ -181,6 +188,82 @@ Page({
   /* ------------------------- 网页扫码登录 ------------------------- */
 
   /** 在网页 roll.acgun.cn 登录页生成配对码，这里扫二维码或手输批准 */
+  /* ------------------------- 账号绑定 ------------------------- */
+
+  /** 绑定微信到当前账号；微信已属于其他账号时询问是否合并 */
+  async bindWechat() {
+    const r = await store.bindWeChat('')
+    if (!r.ok && !r.needMerge) {
+      util.toast(r.error || '绑定失败')
+      return
+    }
+
+    if (r.needMerge) {
+      const other = r.other || {}
+      const ok = await util.confirm(
+        '合并账号？',
+        '这个微信已经属于账号「' + (other.nickName || '其他账号') + '」（' +
+        (other.entryCount || 0) + ' 笔账目）。\n确认后该账号的全部数据会并入当前账号，且无法撤销。',
+        '合并'
+      )
+      if (!ok) return
+
+      const r2 = await store.bindWeChat(r.mergeTicket)
+      if (!r2.ok) {
+        util.toast(r2.error || '合并失败')
+        return
+      }
+      util.toast('已合并，账目已迁移', 'success')
+      this.load()
+      return
+    }
+
+    util.toast(r.merged ? '已合并' : '绑定成功', 'success')
+    this.load()
+  },
+
+  /** 切换到邮箱注册的账号（不合并数据） */
+  goEmailLogin() {
+    wx.navigateTo({ url: '/pages/account-link/account-link' })
+  },
+
+  /** 纯微信账号补设邮箱 + 密码，之后可在网页登录同一账号 */
+  setPassword() {
+    this.setData({ showPwd: true, pwdEmail: '', pwdPass: '', pwdBusy: false })
+  },
+
+  closePwd() {
+    this.setData({ showPwd: false })
+  },
+
+  onPwdEmail(e) { this.setData({ pwdEmail: e.detail.value }) },
+  onPwdPass(e) { this.setData({ pwdPass: e.detail.value }) },
+
+  async submitPassword() {
+    if (this.data.pwdBusy) return
+    const email = (this.data.pwdEmail || '').trim()
+    const pass = this.data.pwdPass || ''
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      util.toast('邮箱格式不正确')
+      return
+    }
+    if (pass.length < 8) {
+      util.toast('密码至少 8 位，需包含字母和数字')
+      return
+    }
+
+    this.setData({ pwdBusy: true })
+    const res = await store.changePassword({ email: email, newPassword: pass })
+    this.setData({ pwdBusy: false })
+    if (!res.ok) {
+      util.toast(res.error || '设置失败')
+      return
+    }
+    util.toast('已设置，可用邮箱登录网页', 'success')
+    this.setData({ showPwd: false })
+    this.load()
+  },
+
   webLogin() {
     const self = this
     wx.scanCode({

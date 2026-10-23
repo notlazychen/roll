@@ -107,7 +107,7 @@ function storeLoginResult(body) {
   return body.user
 }
 
-/** 用微信 code 换服务端 token */
+/** 用微信 code 换服务端 token。陌生微信返回 needLink（不再静默建号） */
 async function loginByWeChat(code, profile) {
   const p = profile || {}
   const res = await rawRequest('POST', '/api/auth/wechat', {
@@ -115,10 +115,29 @@ async function loginByWeChat(code, profile) {
     nickName: p.nickName || '',
     avatarUrl: p.avatarUrl || ''
   }, false)
-  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
-    return { ok: true, user: storeLoginResult(res.data), body: res.data }
+  if (res.status >= 200 && res.status < 300 && res.data) {
+    if (res.data.needLink && res.data.linkTicket) {
+      try { wx.setStorageSync(PENDING_LINK_KEY, res.data.linkTicket) } catch (e) {}
+      return { needLink: true, linkTicket: res.data.linkTicket }
+    }
+    if (res.data.ok) {
+      clearPendingLink()
+      return { ok: true, user: storeLoginResult(res.data), body: res.data }
+    }
   }
   return toError(res, '微信登录失败')
+}
+
+/** 待认领票据的本地暂存键：登录遇到陌生微信时写入，由 account-link 页消费 */
+const PENDING_LINK_KEY = 'lg_pending_link_v1'
+
+/** 取出待认领的 linkTicket（空串表示没有） */
+function takePendingLink() {
+  try { return wx.getStorageSync(PENDING_LINK_KEY) || '' } catch (e) { return '' }
+}
+
+function clearPendingLink() {
+  try { wx.removeStorageSync(PENDING_LINK_KEY) } catch (e) {}
 }
 
 /** 开发模式登录（仅本地调试用，服务端只在 Development 环境开放） */
@@ -148,6 +167,54 @@ async function approveWebQr(ticket) {
   return toError(res, '批准失败')
 }
 
+/** 邮箱密码登录（与微信登录同一个账号体系） */
+async function loginByEmail(email, password) {
+  const res = await rawRequest('POST', '/api/auth/login', { email: email, password: password }, false)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    clearPendingLink()
+    return { ok: true, user: storeLoginResult(res.data) }
+  }
+  return toError(res, '登录失败')
+}
+
+/**
+ * 认领微信身份：/wechat 返回 needLink 后二选一。
+ *   { action:'create', linkTicket, nickName?, avatarUrl? } → 显式创建新账号
+ *   { action:'link',   linkTicket, email, password }       → 绑定已有邮箱账号
+ */
+async function claimWeChat(payload) {
+  const res = await rawRequest('POST', '/api/auth/wechat/claim', payload, false)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    clearPendingLink()
+    return { ok: true, user: storeLoginResult(res.data), isNew: !!res.data.isNew }
+  }
+  return toError(res, '认领失败')
+}
+
+/**
+ * 给当前登录账号绑定微信。
+ * openid 已属于其他账号时返回 { needMerge, mergeTicket, other }，
+ * 用户确认后带 mergeTicket 重发即完成合并（对方账号数据并入当前账号）。
+ */
+async function bindWeChat(mergeTicket) {
+  const code = await wxLogin()
+  if (!code) return { ok: false, error: '未取到微信授权' }
+  const res = await rawRequest('POST', '/api/auth/bind-wechat', {
+    code: code,
+    mergeTicket: mergeTicket || ''
+  }, true)
+  if (res.status >= 200 && res.status < 300 && res.data) {
+    if (res.data.needMerge) {
+      return { needMerge: true, mergeTicket: res.data.mergeTicket, other: res.data.other || {} }
+    }
+    if (res.data.ok) {
+      setUser(res.data.user)
+      return { ok: true, merged: !!res.data.merged, user: res.data.user }
+    }
+  }
+  return toError(res, '绑定失败')
+}
+
 function randomKey() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
@@ -175,11 +242,19 @@ function ensureLogin(force) {
           avatarUrl: cached.avatarUrl || ''
         })
         if (r.ok) return r.user
+        if (r.needLink) {
+          // 陌生微信：交给 account-link 页处理，不要落到 dev 兜底
+          const err = new Error('NEED_LINK')
+          err.needLink = true
+          err.linkTicket = r.linkTicket
+          throw err
+        }
         lastError = r.error
       } else {
         lastError = '未取到微信登录凭证'
       }
     } catch (e) {
+      if (e && e.needLink) throw e
       lastError = (e && e.errMsg) || '调用微信登录失败'
     }
 
@@ -276,8 +351,13 @@ module.exports = {
   logout,
   ensureLogin,
   loginByWeChat,
+  loginByEmail,
+  claimWeChat,
+  bindWeChat,
   loginByDev,
   approveWebQr,
+  takePendingLink,
+  clearPendingLink,
   randomKey,
   call,
   callValue,

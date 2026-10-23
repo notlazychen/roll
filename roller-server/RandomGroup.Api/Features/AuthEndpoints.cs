@@ -29,14 +29,24 @@ public record RegisterRequest(string Email, string Password, string? NickName);
 /// <summary>登录：邮箱 + 密码</summary>
 public record LoginRequest(string Email, string Password);
 
-/// <summary>修改密码（需要登录态）</summary>
-public record ChangePasswordRequest(string? OldPassword, string NewPassword);
+/// <summary>
+/// 修改 / 设置密码（需要登录态）。
+/// 账号还没有邮箱时（纯微信账号）可同时补一个邮箱，设置后即可在 Web 端登录同一账号。
+/// </summary>
+public record ChangePasswordRequest(string? OldPassword, string NewPassword, string? Email = null);
 
 /// <summary>
-/// 微信绑定：已登录的 Web 账号把小程序身份并进来。
-/// Code 由小程序侧 wx.login 获取后通过二维码/中转页传给 Web 端。
+/// 微信绑定：把当前登录账号与小程序 openid 关联。
+/// Code 由客户端 wx.login 获取；当 openid 已属于其他账号时，
+/// 服务端返回 needMerge + mergeTicket，客户端确认后带票据重发以完成合并。
 /// </summary>
-public record BindWeChatRequest(string Code);
+public record BindWeChatRequest(string Code, string? MergeTicket);
+
+/// <summary>
+/// 微信身份认领：/wechat 遇陌生 openid 返回 needLink 后，客户端凭 linkTicket 二选一。
+/// action=create 显式创建新账号；action=link 用邮箱密码验证后把微信绑到已有账号。
+/// </summary>
+public record ClaimWeChatRequest(string LinkTicket, string Action, string? NickName, string? AvatarUrl, string? Email, string? Password);
 
 public static class AuthEndpoints
 {
@@ -160,11 +170,23 @@ public static class AuthEndpoints
             if (user.HasPassword && !PasswordHasher.Verify(user.PasswordHash, req.OldPassword ?? string.Empty))
                 throw ApiException.BadRequest("原密码不正确");
 
+            // 纯微信账号可借这次设置一并补邮箱（邮箱是 Web 端登录的凭据之一）
+            if (string.IsNullOrWhiteSpace(user.Email) && !string.IsNullOrWhiteSpace(req.Email))
+            {
+                var newEmail = AccountService.NormalizeEmail(req.Email);
+                if (!AccountService.IsValidEmail(newEmail))
+                    throw ApiException.BadRequest("邮箱格式不正确");
+                var taken = await db.Users.AnyAsync(u => u.Email == newEmail && u.Id != uid, ct);
+                if (taken)
+                    throw ApiException.BadRequest("该邮箱已被其他账号使用");
+                user.Email = newEmail;
+            }
+
             user.PasswordHash = PasswordHasher.Hash(newPwd);
             await db.SaveChangesAsync(ct);
 
-            // 换密码后重发 token，前端无感续期
-            return Results.Json(new { ok = true, token = tokens.Create(user) });
+            // 换密码后重发 token，前端无感续期；带 user 便于客户端刷新绑定状态
+            return Results.Json(new { ok = true, token = tokens.Create(user), user = AccountService.ToDto(user) });
         }).WithTags("认证");
 
         // 微信绑定：把当前 Web 账号与小程序 openid 合并到同一个 uid
@@ -174,6 +196,8 @@ public static class AuthEndpoints
             RollDbContext db,
             WeChatClient wechat,
             TokenService tokens,
+            AccountService accounts,
+            AccountLinkService links,
             CancellationToken ct) =>
         {
             var uid = ctx.User.GetUserId();
@@ -185,20 +209,59 @@ public static class AuthEndpoints
 
             var session = await wechat.Code2SessionAsync(req.Code, ct);
 
-            // 已被别的账号占用，说明这个小程序身份已经存在，不能悄悄抢过来
-            var occupied = await db.Users.AsNoTracking()
+            // 一个账号只绑一个微信：当前账号已有别的微信时明确拒绝
+            if (user.OpenId is not null && user.OpenId != session.OpenId)
+                throw ApiException.BadRequest("当前账号已绑定其他微信，请先解绑后再试");
+
+            var donorId = await db.Users.AsNoTracking()
                 .Where(u => u.OpenId == session.OpenId && u.Id != uid)
                 .Select(u => u.Id)
                 .FirstOrDefaultAsync(ct);
-            if (occupied != 0)
-                throw ApiException.BadRequest("该微信已绑定其他账号，请用原账号登录");
+
+            if (donorId != 0 && string.IsNullOrWhiteSpace(req.MergeTicket))
+            {
+                // 微信身份已被另一个账号占用：不悄悄抢过来，
+                // 签发合并票据，把对方账号概况带回给用户确认
+                var donor = await db.Users.AsNoTracking().FirstAsync(u => u.Id == donorId, ct);
+                var entryCount = await db.Entries.CountAsync(e => e.UserId == donorId, ct);
+                var (ticket, expires) = links.NewMergeTicket(uid, donorId, session.OpenId, session.UnionId);
+                return Results.Json(new
+                {
+                    needMerge = true,
+                    mergeTicket = ticket,
+                    expiresInMs = (long)(expires - DateTimeOffset.UtcNow).TotalMilliseconds,
+                    other = new
+                    {
+                        nickName = donor.NickName,
+                        entryCount,
+                        createdAt = donor.CreatedAt.ToMs()
+                    }
+                });
+            }
+
+            if (donorId != 0)
+            {
+                // 用户已确认合并：donor 的数据全部并入当前账号，donor 删除
+                var merge = links.TakeMergeTicket(req.MergeTicket, uid)
+                    ?? throw ApiException.BadRequest("合并确认已过期，请重新绑定");
+
+                await using var tx = await db.Database.BeginTransactionAsync(ct);
+                await accounts.MergeUsersAsync(uid, donorId, ct);
+                user.OpenId = merge.OpenId;
+                if (!string.IsNullOrWhiteSpace(merge.UnionId)) user.UnionId = merge.UnionId;
+                user.LastLoginAt = DateTimeOffset.UtcNow;
+                await db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+
+                return Results.Json(new { ok = true, merged = true, user = AccountService.ToDto(user) });
+            }
 
             user.OpenId = session.OpenId;
             if (!string.IsNullOrWhiteSpace(session.UnionId)) user.UnionId = session.UnionId;
             user.LastLoginAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(ct);
 
-            return Results.Json(new { ok = true, user = AccountService.ToDto(user) });
+            return Results.Json(new { ok = true, merged = false, user = AccountService.ToDto(user) });
         }).WithTags("认证");
 
         /* ----------------------- 小程序：微信一键登录 ----------------------- */
@@ -210,6 +273,7 @@ public static class AuthEndpoints
             WeChatClient wechat,
             TokenService tokens,
             AccountService accounts,
+            AccountLinkService links,
             CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(req.Code))
@@ -219,24 +283,19 @@ public static class AuthEndpoints
             var now = DateTimeOffset.UtcNow;
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.OpenId == session.OpenId, ct);
-            var isNew = user is null;
+            var isNew = false;
 
             if (user is null)
             {
-                var desired = string.IsNullOrWhiteSpace(req.NickName) ? DefaultNick() : AccountService.CleanNick(req.NickName);
-                var nick = await accounts.EnsureUniqueNickAsync(desired, ct);
-
-                user = new LedgerUser
+                // 陌生微信不再静默建号（那会把邮箱老用户分裂成两个账号）：
+                // 签发认领票据，由用户选择「绑定已有邮箱账号」或「创建新账号」
+                var (ticket, expires) = links.NewLinkTicket(session.OpenId, session.UnionId);
+                return Results.Json(new
                 {
-                    OpenId = session.OpenId,
-                    UnionId = session.UnionId,
-                    NickName = nick,
-                    NickKey = AccountService.NickKeyOf(nick),
-                    AvatarUrl = req.AvatarUrl,
-                    CreatedAt = now,
-                    LastLoginAt = now
-                };
-                db.Users.Add(user);
+                    needLink = true,
+                    linkTicket = ticket,
+                    expiresInMs = (long)(expires - DateTimeOffset.UtcNow).TotalMilliseconds
+                });
             }
             else
             {
@@ -264,6 +323,89 @@ public static class AuthEndpoints
                 token = tokens.Create(user),
                 user = AccountService.ToDto(user),
                 isNew
+            });
+        }).AllowAnonymous();
+
+        // 微信身份认领：needLink 之后客户端凭 linkTicket 提交。
+        //   action=create → 创建新账号（显式，不再静默）
+        //   action=link   → 验证邮箱密码，把微信身份绑到已有账号上
+        auth.MapPost("/wechat/claim", async (
+            ClaimWeChatRequest req,
+            RollDbContext db,
+            TokenService tokens,
+            AccountService accounts,
+            AccountService.LoginThrottle throttle,
+            AccountLinkService links,
+            CancellationToken ct) =>
+        {
+            var action = (req.Action ?? string.Empty).Trim().ToLowerInvariant();
+            if (action != "create" && action != "link")
+                throw ApiException.BadRequest("action 必须是 create 或 link");
+
+            // 先校验参数再消费票据：action 写错这类低级失误不应该烧掉一次性票据
+            var link = links.TakeLinkTicket(req.LinkTicket)
+                ?? throw ApiException.BadRequest("认领已过期，请重新打开小程序再试");
+
+            var now = DateTimeOffset.UtcNow;
+
+            if (action == "create")
+            {
+                var desired = string.IsNullOrWhiteSpace(req.NickName) ? DefaultNick() : AccountService.CleanNick(req.NickName);
+                var nick = await accounts.EnsureUniqueNickAsync(desired, ct);
+
+                var user = new LedgerUser
+                {
+                    OpenId = link.OpenId,
+                    UnionId = link.UnionId,
+                    NickName = nick,
+                    NickKey = AccountService.NickKeyOf(nick),
+                    AvatarUrl = req.AvatarUrl,
+                    CreatedAt = now,
+                    LastLoginAt = now
+                };
+                db.Users.Add(user);
+                await db.SaveChangesAsync(ct);
+
+                return Results.Json(new
+                {
+                    ok = true,
+                    token = tokens.Create(user),
+                    user = AccountService.ToDto(user),
+                    isNew = true
+                });
+            }
+
+            var email = AccountService.NormalizeEmail(req.Email ?? string.Empty);
+            var pwd = req.Password ?? string.Empty;
+            if (!AccountService.IsValidEmail(email) || pwd.Length == 0)
+                throw ApiException.BadRequest("请输入要绑定的邮箱账号和密码");
+
+            if (throttle.IsLocked(email))
+                throw ApiException.Forbidden("密码错误次数过多，请 10 分钟后再试");
+
+            var target = await db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
+            if (target is null || !target.HasPassword || !PasswordHasher.Verify(target.PasswordHash, pwd))
+            {
+                throttle.RecordFailure(email);
+                throw ApiException.Unauthorized("邮箱或密码不正确");
+            }
+            throttle.Reset(email);
+
+            // 一个账号只允许绑一个微信：已绑别的微信时明确拒绝，避免覆盖丢身份
+            if (target.OpenId is not null && target.OpenId != link.OpenId)
+                throw ApiException.BadRequest("该邮箱账号已绑定其他微信，请先用原微信登录");
+
+            target.OpenId = link.OpenId;
+            if (!string.IsNullOrWhiteSpace(link.UnionId)) target.UnionId = link.UnionId;
+            target.LastLoginAt = now;
+            await db.SaveChangesAsync(ct);
+
+            return Results.Json(new
+            {
+                ok = true,
+                token = tokens.Create(target),
+                user = AccountService.ToDto(target),
+                isNew = false
             });
         }).AllowAnonymous();
 

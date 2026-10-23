@@ -1,109 +1,99 @@
-<view class="page">
+<app-frame mode="menu" active="index">
+  <view class="page">
 
-  <!-- ============ 顶部：本月概览 ============ -->
-  <view class="summary">
-    <view class="summary-top">
-      <view class="flex1">
-        <view class="summary-label">{{monthLabel}} 支出</view>
-        <view class="summary-amount num">￥{{overview.monthExpenseText}}</view>
-      </view>
-      <view class="summary-income" bindtap="goCharts">
-        <view class="summary-label">本月收入</view>
-        <view class="summary-income-num num">￥{{overview.monthIncomeText}}</view>
+    <!-- ============ 标题行 + 月份切换 / 记一笔 ============ -->
+    <view class="topbar">
+      <text class="topbar-title">明细</text>
+      <view class="topbar-right">
+        <view class="month-switch">
+          <view class="month-arrow" catchtap="prevMonth">‹</view>
+          <picker
+            mode="date"
+            fields="month"
+            value="{{monthValue}}"
+            end="{{maxMonth}}"
+            bindchange="onMonthPick"
+          >
+            <view class="month-label">{{monthLabel}}</view>
+          </picker>
+          <view class="month-arrow {{canNextMonth ? '' : 'month-arrow-off'}}" catchtap="nextMonth">›</view>
+        </view>
+
+        <view class="add-btn" wx:if="{{loggedIn}}" bindtap="addEntry">＋ 记一笔</view>
       </view>
     </view>
 
-    <view class="summary-foot">
-      <view class="summary-pill">
-        <text class="summary-pill-label">今日支出</text>
-        <text class="num">￥{{overview.todayExpenseText}}</text>
+    <!-- ============ 概览：四张数字卡（2×2） ============ -->
+    <view class="stats">
+      <view
+        class="stat-card {{item.accent ? 'stat-accent' : ''}}"
+        wx:for="{{stats}}"
+        wx:key="key"
+      >
+        <text class="stat-label">{{item.label}}</text>
+        <text class="stat-value num {{item.tone === 'expense' ? 'expense-text' : item.tone === 'income' ? 'income-text' : ''}}">￥{{item.value}}</text>
       </view>
-      <view class="summary-pill">
-        <text class="summary-pill-label">今日收入</text>
-        <text class="num">￥{{overview.todayIncomeText}}</text>
-      </view>
-      <view class="summary-more" bindtap="goCharts">看图表 ›</view>
     </view>
-  </view>
 
-  <!-- ============ 搜索与筛选 ============ -->
-  <view class="toolbar">
+    <!-- ============ 搜索 ============ -->
     <view class="search">
       <text class="search-icon">🔍</text>
       <input
         class="search-input"
         value="{{keyword}}"
-        placeholder="搜索备注 / 渠道 / 账户"
+        placeholder="搜索备注、渠道、消费者"
         placeholder-class="ph"
         confirm-type="search"
         bindinput="onKeyword"
-        bindconfirm="applyFilter"
+        bindconfirm="onKeywordConfirm"
       />
       <view class="search-clear" wx:if="{{keyword}}" catchtap="clearKeyword">✕</view>
     </view>
-    <view class="filter-btn {{filterActive ? 'filter-btn-on' : ''}}" bindtap="toggleFilter">
-      <text>筛选</text>
-      <text class="filter-dot" wx:if="{{filterActive}}"></text>
-    </view>
-  </view>
 
-  <!-- 筛选面板 -->
-  <view class="filter-panel" wx:if="{{showFilter}}">
-    <view class="filter-row">
+    <!-- ============ 收支筛选 ============ -->
+    <view class="seg filter-seg">
       <view
-        class="seg-item {{filter.type === '' ? 'seg-on' : ''}}"
+        class="seg-item {{type === '' ? 'seg-on' : ''}}"
         data-type=""
-        bindtap="onFilterType"
+        bindtap="onTypeFilter"
       >全部</view>
       <view
-        class="seg-item {{filter.type === 'expense' ? 'seg-on' : ''}}"
+        class="seg-item {{type === 'expense' ? 'seg-on' : ''}}"
         data-type="expense"
-        bindtap="onFilterType"
+        bindtap="onTypeFilter"
       >支出</view>
       <view
-        class="seg-item {{filter.type === 'income' ? 'seg-on' : ''}}"
+        class="seg-item {{type === 'income' ? 'seg-on' : ''}}"
         data-type="income"
-        bindtap="onFilterType"
+        bindtap="onTypeFilter"
       >收入</view>
     </view>
 
-    <scroll-view class="filter-scroll" scroll-x enable-flex>
-      <view class="chip {{filter.category === '' ? 'chip-on' : ''}}" data-cat="" bindtap="onFilterCategory">全部分类</view>
-      <view
-        wx:for="{{options.categories}}"
-        wx:key="id"
-        class="chip {{filter.category === item.name ? 'chip-on' : ''}}"
-        data-cat="{{item.name}}"
-        bindtap="onFilterCategory"
-      >{{item.icon}} {{item.name}}</view>
-    </scroll-view>
-
-    <view class="filter-foot">
-      <view class="btn btn-plain btn-sm" bindtap="resetFilter">重置</view>
-      <view class="btn btn-primary btn-sm flex1" style="margin-left:16rpx;" bindtap="applyFilter">应用筛选</view>
+    <!-- ============ 未登录提示 ============ -->
+    <view class="alert alert-hint" wx:if="{{!loggedIn && !loading}}" bindtap="goMe">
+      还没有登录，点这里登录后开始记账 ›
     </view>
-  </view>
 
-  <!-- ============ 未登录提示 ============ -->
-  <view class="login-tip" wx:if="{{!loggedIn && !loading}}" bindtap="goMe">
-    <text class="login-tip-icon">🔑</text>
-    <view class="flex1">
-      <view class="login-tip-title">还没有登录</view>
-      <view class="login-tip-sub">登录后才能记账，账目会按微信账号隔离</view>
-    </view>
-    <text class="login-tip-arrow">›</text>
-  </view>
+    <!-- ============ 明细列表 ============ -->
+    <block wx:if="{{loggedIn}}">
+      <view class="list-card">
+        <view class="list-empty" wx:if="{{loading && groups.length === 0}}">正在加载…</view>
 
-  <!-- ============ 明细列表 ============ -->
-  <block wx:if="{{loggedIn}}">
-    <view class="list" wx:if="{{groups.length > 0}}">
-      <view class="group" wx:for="{{groups}}" wx:for-item="g" wx:key="key">
-        <view class="group-head">
-          <text class="group-title">{{g.label}}</text>
-          <text class="group-sum num">{{g.summary}}</text>
+        <view class="empty" wx:elif="{{groups.length === 0}}">
+          <view class="empty-icon">📒</view>
+          <view>{{keyword || type ? '没有符合条件的账目' : '这个月还没有记录'}}</view>
+          <view class="t-tiny mt8">{{keyword || type ? '换个关键词或切回「全部」试试' : '点右下角开始第一笔'}}</view>
         </view>
 
-        <view class="group-body">
+        <view class="group" wx:for="{{groups}}" wx:for-item="g" wx:key="key">
+          <view class="group-head">
+            <text class="group-title">{{g.label}}</text>
+            <view class="group-sum num">
+              <text class="expense-text" wx:if="{{g.expenseText}}">-￥{{g.expenseText}}</text>
+              <text class="income-text" wx:if="{{g.incomeText}}">+￥{{g.incomeText}}</text>
+            </view>
+          </view>
+
           <view
             class="entry"
             wx:for="{{g.items}}"
@@ -116,40 +106,35 @@
             <view class="flex1 entry-main">
               <view class="entry-line1">
                 <text class="entry-cat">{{e.category}}</text>
-                <text class="entry-channel" wx:if="{{e.channel}}">· {{e.channel}}</text>
+                <text class="entry-channel" wx:if="{{e.channelShort}}">{{e.channelShort}}</text>
               </view>
               <view class="entry-line2">
-                <text class="entry-time">{{e.timeText}}</text>
+                <text>{{e.timeText}}</text>
                 <text wx:if="{{e.consumer}}"> · {{e.consumer}}</text>
                 <text wx:if="{{e.account}}"> · {{e.account}}</text>
                 <text wx:if="{{e.remark}}" class="entry-remark"> · {{e.remark}}</text>
               </view>
               <view class="entry-tags" wx:if="{{e.tags.length > 0}}">
-                <text class="tag" wx:for="{{e.tags}}" wx:for-item="t" wx:key="*this">{{t}}</text>
+                <text class="tag" wx:for="{{e.tags}}" wx:for-item="t" wx:key="*this">#{{t}}</text>
               </view>
             </view>
-            <view class="entry-amount num {{e.isIncome ? 'income-text' : ''}}">{{e.signedText}}</view>
+            <text class="entry-amount num {{e.isIncome ? 'income-text' : 'expense-text'}}">{{e.isIncome ? '+' : '-'}}￥{{e.amountText}}</text>
           </view>
         </view>
       </view>
+
+      <view class="load-more" wx:if="{{groups.length > 0}}">
+        <text wx:if="{{loadingMore}}">加载中…</text>
+        <text wx:elif="{{hasMore}}" bindtap="loadMore">加载更多</text>
+        <text wx:else class="t-tiny">{{total > 0 ? '共 ' + total + ' 笔 · ' : ''}}没有更多了</text>
+      </view>
+    </block>
+
+    <view class="bottom-space" style="height: 160rpx;"></view>
+
+    <!-- ============ 悬浮记账按钮 ============ -->
+    <view class="fab" wx:if="{{loggedIn}}" bindtap="addEntry">
+      <text class="fab-plus">＋</text>
     </view>
-
-    <view class="empty" wx:if="{{!loading && groups.length === 0}}">
-      <view class="empty-icon">📒</view>
-      <view class="t-sub">{{filterActive || keyword ? '没有符合条件的账目' : '还没有账目，点右下角记第一笔'}}</view>
-    </view>
-
-    <view class="load-more" wx:if="{{groups.length > 0}}">
-      <text wx:if="{{loadingMore}}">加载中…</text>
-      <text wx:elif="{{hasMore}}" bindtap="loadMore">加载更多</text>
-      <text wx:else class="t-tiny">{{total > 0 ? '共 ' + total + ' 笔 · ' : ''}}没有更多了</text>
-    </view>
-  </block>
-
-  <view class="bottom-space" style="height: 180rpx;"></view>
-
-  <!-- ============ 悬浮记账按钮 ============ -->
-  <view class="fab" wx:if="{{loggedIn}}" bindtap="addEntry">
-    <text class="fab-plus">＋</text>
   </view>
-</view>
+</app-frame>

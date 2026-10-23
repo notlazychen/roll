@@ -111,6 +111,58 @@ public sealed class AccountService
         u.Email, u.OpenId is not null);
 
     /// <summary>
+    /// 把 donor 账号的全部数据并入 owner，然后删除 donor。调用方负责开事务。
+    /// 规则：
+    ///   - 账目直接改归属（分类/渠道等按文本存储，无需重定向）；
+    ///   - 选项与标签规则若 owner 已有同名的，以 owner 为准、丢弃 donor 的，避免唯一索引冲突；
+    ///   - donor 用户行删除后其昵称唯一键自动释放。
+    /// </summary>
+    public async Task MergeUsersAsync(long ownerId, long donorId, CancellationToken ct = default)
+    {
+        // 1) 选项：按 (Kind, Name) 判重
+        var ownerOptionKeys = (await _db.Options
+                .Where(o => o.UserId == ownerId)
+                .Select(o => new { o.Kind, o.Name })
+                .ToListAsync(ct))
+            .Select(o => (o.Kind, o.Name))
+            .ToHashSet();
+
+        var donorOptions = await _db.Options.Where(o => o.UserId == donorId).ToListAsync(ct);
+        foreach (var op in donorOptions)
+        {
+            if (ownerOptionKeys.Contains((op.Kind, op.Name)))
+                _db.Options.Remove(op);
+            else
+                op.UserId = ownerId;
+        }
+
+        // 2) 标签规则：按 Keyword 判重（同一备注关键词只保留 owner 的规则）
+        var ownerKeywords = (await _db.TagRules
+                .Where(r => r.UserId == ownerId)
+                .Select(r => r.Keyword)
+                .ToListAsync(ct))
+            .ToHashSet();
+
+        var donorRules = await _db.TagRules.Where(r => r.UserId == donorId).ToListAsync(ct);
+        foreach (var rule in donorRules)
+        {
+            if (ownerKeywords.Contains(rule.Keyword))
+                _db.TagRules.Remove(rule);
+            else
+                rule.UserId = ownerId;
+        }
+
+        // 3) 账目整体迁移
+        await _db.Entries
+            .Where(e => e.UserId == donorId)
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.UserId, ownerId), ct);
+
+        // 4) 删除 donor
+        var donor = await _db.Users.FirstOrDefaultAsync(u => u.Id == donorId, ct);
+        if (donor is not null) _db.Users.Remove(donor);
+    }
+
+    /// <summary>
     /// 轻量登录节流：同一邮箱连续失败过多时暂时锁定。
     /// 存在进程内存里，多实例部署时各自计数 —— 对当前单机部署足够，
     /// 将来上多实例再换成 Redis。

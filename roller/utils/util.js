@@ -185,6 +185,7 @@ function tzOffset() {
 
 module.exports = {
   AVATAR_COLORS,
+  pad2,
   yuan,
   toCents,
   money,

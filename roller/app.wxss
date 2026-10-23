@@ -1,7 +1,38 @@
-/* ============ 全局设计系统 ============ */
+/* ============================================================
+   全局设计系统 —— 与 Web 端 roller-web/src/styles/tokens.css
+   保持一致：同一套颜色、圆角、阴影与字号层级。
+   改这里，两边一起对齐；页面里不要再写死色值。
+   ============================================================ */
+
 page {
-  background: #F5F6F3;
-  color: #1F2420;
+  --primary: #1F8A70;
+  --primary-light: #2BAE8A;
+  --primary-grad: linear-gradient(90deg, #1F8A70 0%, #2BAE8A 100%);
+  --primary-soft: rgba(31, 138, 112, 0.10);
+  --primary-soft-2: rgba(31, 138, 112, 0.06);
+
+  --bg: #F5F6F3;
+  --card: #FFFFFF;
+  --line: #ECEEF2;
+  --fill: #F2F3F7;
+
+  --ink: #202124;
+  --ink-2: #5F6368;
+  --ink-3: #9AA0A6;
+
+  --expense: #E05B4A;
+  --expense-soft: #FDECEA;
+  --income: #1F8A70;
+  --income-soft: rgba(31, 138, 112, 0.10);
+
+  --r-sm: 20rpx;
+  --r-md: 32rpx;
+  --r-lg: 36rpx;
+  --shadow-card: 0 8rpx 30rpx rgba(15, 28, 45, 0.05);
+  --shadow-fab: 0 20rpx 40rpx rgba(31, 138, 112, 0.32);
+
+  background: var(--bg);
+  color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Helvetica, sans-serif;
   font-size: 28rpx;
   line-height: 1.5;
@@ -12,65 +43,439 @@ view, text, input, textarea, scroll-view, button {
   box-sizing: border-box;
 }
 
-/* 主色：墨绿（支出用暖橙、收入用绿，符合国内记账软件习惯）
-   注意：这里不是股票红绿语义，收入和支出是「性质」而不是涨跌 */
-page {
-  --primary: #1F8A70;
-  --primary-soft: #E6F4EF;
-  --expense: #E8613C;
-  --expense-soft: #FDECE6;
-  --income: #1F9D6B;
-  --income-soft: #E5F6EE;
-  --ink: #1F2420;
-  --ink-2: #5C645C;
-  --ink-3: #9AA096;
-  --line: #EEEFF0;
-  --bg-2: #F5F6F3;
+/* ------------------------------- 页面骨架 ------------------------------- */
+
+/* 内容区左右留白与 Web 移动端一致：16px */
+.page {
+  padding: 0 32rpx;
 }
 
-.grad {
-  background: linear-gradient(135deg, #1F8A70 0%, #2BAE8A 100%);
+/* 页面标题行：左标题、右操作。对应 Web 的 .topbar（移动端右侧操作换行占满） */
+.topbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 20rpx 0 16rpx;
 }
+
+.topbar-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+/* ------------------------------- 卡片 ------------------------------- */
 
 .card {
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  box-shadow: 0 6rpx 24rpx rgba(31, 36, 32, 0.05);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
 }
 
 .card-flat {
-  background: #FFFFFF;
-  border-radius: 24rpx;
+  background: var(--card);
+  border-radius: var(--r-lg);
   border: 2rpx solid var(--line);
 }
 
-/* 文字 */
-.t-title {
-  font-size: 34rpx;
+/* 面板：带标题的内容卡，对应 Web 的 .panel */
+.panel {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 30rpx 32rpx 32rpx;
+  margin-top: 20rpx;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.panel-title {
+  font-size: 28rpx;
   font-weight: 600;
   color: var(--ink);
 }
 
-.t-sub {
-  font-size: 26rpx;
+.panel-hint {
+  display: block;
+  font-size: 23rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+}
+
+/* ------------------------------- 概览数字卡 ------------------------------- */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -6rpx;
+}
+
+.stat-card {
+  width: calc(50% - 12rpx);
+  margin: 6rpx;
+  padding: 26rpx 26rpx 26rpx 30rpx;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 第一张卡左侧品牌竖条，和 Web 的 .statAccent 一样 */
+.stat-accent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 26rpx;
+  bottom: 26rpx;
+  width: 6rpx;
+  border-radius: 0 6rpx 6rpx 0;
+  background: var(--primary-grad);
+}
+
+.stat-label {
+  font-size: 23rpx;
   color: var(--ink-2);
 }
 
-.t-muted {
+.stat-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 8rpx;
+}
+
+.stat-em {
+  font-size: 21rpx;
+  color: var(--ink-3);
+  margin-top: 4rpx;
+}
+
+/* 图表页三卡：一行三等分 */
+.stats-3 {
+  display: flex;
+  margin: 0 -5rpx;
+}
+
+.stats-3 .stat-card {
+  width: calc(33.33% - 10rpx);
+  margin: 0 5rpx;
+  padding: 22rpx 20rpx 22rpx 24rpx;
+}
+
+.stats-3 .stat-label {
+  font-size: 22rpx;
+}
+
+.stats-3 .stat-value {
+  font-size: 32rpx;
+  margin-top: 6rpx;
+}
+
+/* ------------------------------- 分段控件 ------------------------------- */
+
+/* 与 Web 的 .segmented 一致：灰底胶囊 + 白色选中块 */
+.seg {
+  display: flex;
+  padding: 8rpx;
+  background: #EEF0F4;
+  border-radius: 999rpx;
+}
+
+.seg-item {
+  flex: 1;
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  font-size: 27rpx;
+  font-weight: 500;
+  color: var(--ink-2);
+  border-radius: 999rpx;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.seg-on {
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(15, 28, 45, 0.08);
+}
+
+/* 小号分段：卡片标题右侧的支出/收入切换 */
+.seg-sm {
+  padding: 4rpx;
+  background: var(--fill);
+}
+
+.seg-sm .seg-item {
+  height: 44rpx;
+  line-height: 44rpx;
+  font-size: 21rpx;
+  padding: 0 22rpx;
+  flex: none;
+}
+
+/* ------------------------------- 表单 ------------------------------- */
+
+.field {
+  margin-top: 30rpx;
+}
+
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.field-label {
   font-size: 24rpx;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.field-action {
+  font-size: 23rpx;
+  color: var(--primary);
+}
+
+.input {
+  height: 88rpx;
+  padding: 0 28rpx;
+  background: #FAFBFC;
+  border: 2rpx solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 28rpx;
+  color: var(--ink);
+}
+
+.ph {
+  color: #B4B9B0;
+}
+
+/* 选择框：样式对齐 Web 的 select，右侧带箭头 */
+.select-box {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  padding: 0 28rpx;
+  background: #FAFBFC;
+  border: 2rpx solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.select-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.select-placeholder {
+  flex: 1;
+  font-size: 28rpx;
+  color: #B4B9B0;
+}
+
+.select-arrow {
+  font-size: 30rpx;
+  color: #C4C8C0;
+  margin-left: 12rpx;
+}
+
+/* ------------------------------- 胶囊（chip） ------------------------------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 4rpx;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 68rpx;
+  padding: 0 26rpx;
+  margin: 0 14rpx 14rpx 0;
+  border-radius: 999rpx;
+  background: var(--card);
+  border: 2rpx solid var(--line);
+  color: var(--ink-2);
+  font-size: 27rpx;
+  font-weight: 500;
+}
+
+.chip-on {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.chip-add {
+  border-style: dashed;
+  border-color: #D8DBD4;
   color: var(--ink-3);
 }
 
-.t-tiny {
-  font-size: 22rpx;
-  color: var(--ink-3);
+/* ------------------------------- 按钮 ------------------------------- */
+
+.btn {
+  height: 88rpx;
+  padding: 0 40rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
+
+.btn:active {
+  opacity: 0.88;
+  transform: scale(0.985);
+}
+
+.btn-primary {
+  background: var(--primary-grad);
+  color: #FFFFFF;
+  box-shadow: 0 12rpx 26rpx rgba(31, 138, 112, 0.24);
+}
+
+.btn-ghost {
+  background: var(--card);
+  color: var(--ink-2);
+  border: 2rpx solid var(--line);
+}
+
+.btn-plain {
+  background: var(--fill);
+  color: var(--ink-2);
+}
+
+.btn-danger {
+  background: var(--expense-soft);
+  color: var(--expense);
+}
+
+.btn-disabled {
+  background: #E9EAE7 !important;
+  color: #A8ADA4 !important;
+  box-shadow: none !important;
+}
+
+.btn-sm {
+  height: 68rpx;
+  padding: 0 30rpx;
+  font-size: 25rpx;
+}
+
+.btn-xs {
+  height: 56rpx;
+  padding: 0 24rpx;
+  font-size: 23rpx;
+}
+
+/* ------------------------------- 标签 ------------------------------- */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 38rpx;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  margin-right: 10rpx;
+  margin-bottom: 8rpx;
+}
+
+.tag-gray { background: var(--fill); color: var(--ink-2); }
+.tag-orange { background: var(--expense-soft); color: var(--expense); }
+.tag-green { background: var(--income-soft); color: var(--income); }
+
+/* ------------------------------- 浮层 ------------------------------- */
+
+.sheet-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(16, 24, 40, 0.42);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet {
+  width: 100%;
+  max-height: 84vh;
+  background: var(--card);
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 24rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
+  animation: sheetUp 0.22s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(60rpx); opacity: 0.4; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-handle {
+  width: 68rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: #E3E5E0;
+  margin: 0 auto 12rpx;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20rpx;
+}
+
+.sheet-title { font-size: 30rpx; font-weight: 600; }
+.sheet-close { font-size: 32rpx; color: var(--ink-3); padding: 8rpx 12rpx; }
+.sheet-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.sheet-scroll { max-height: 56vh; }
+
+/* ------------------------------- 其它 ------------------------------- */
+
+.grad {
+  background: var(--primary-grad);
+}
+
+/* 文字 */
+.t-title { font-size: 32rpx; font-weight: 600; color: var(--ink); }
+.t-sub { font-size: 26rpx; color: var(--ink-2); }
+.t-muted { font-size: 24rpx; color: var(--ink-3); }
+.t-tiny { font-size: 22rpx; color: var(--ink-3); }
 
 .primary-text { color: var(--primary); }
 .expense-text { color: var(--expense); }
 .income-text { color: var(--income); }
 
-/* 金额专用：等宽数字，避免跳动 */
+/* 金额数字等宽，避免跳动 */
 .num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
@@ -85,136 +490,45 @@ page {
 .center { display: flex; align-items: center; justify-content: center; }
 .wrap { flex-wrap: wrap; }
 
-/* 按钮 */
-.btn {
-  height: 88rpx;
-  border-radius: 44rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30rpx;
-  font-weight: 600;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-
-.btn:active { opacity: 0.85; transform: scale(0.985); }
-
-.btn-primary {
-  background: linear-gradient(135deg, #1F8A70 0%, #2BAE8A 100%);
-  color: #FFFFFF;
-  box-shadow: 0 10rpx 24rpx rgba(31, 138, 112, 0.28);
-}
-
-.btn-ghost { background: var(--primary-soft); color: var(--primary); }
-.btn-plain { background: #F2F3F1; color: #4C544C; }
-.btn-danger { background: var(--expense-soft); color: var(--expense); }
-
-.btn-disabled {
-  background: #E9EAE7 !important;
-  color: #A8ADA4 !important;
-  box-shadow: none !important;
-}
-
-.btn-sm { height: 64rpx; border-radius: 32rpx; font-size: 26rpx; padding: 0 28rpx; }
-.btn-xs { height: 52rpx; border-radius: 26rpx; font-size: 24rpx; padding: 0 22rpx; }
-
-/* 标签 */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  height: 40rpx;
-  padding: 0 16rpx;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  background: var(--primary-soft);
-  color: var(--primary);
-  margin-right: 10rpx;
-  margin-bottom: 10rpx;
-}
-
-.tag-gray { background: #F2F3F1; color: var(--ink-2); }
-.tag-orange { background: var(--expense-soft); color: var(--expense); }
-.tag-green { background: var(--income-soft); color: var(--income); }
-
-/* 输入 */
-.input {
-  height: 88rpx;
-  background: #F6F7F5;
-  border-radius: 22rpx;
-  padding: 0 28rpx;
-  font-size: 30rpx;
-  color: var(--ink);
-}
-
-.ph { color: #B4B9B0; }
-
-.field { margin-top: 28rpx; }
-.field-label {
-  font-size: 24rpx;
-  color: var(--ink-3);
-  margin-bottom: 12rpx;
-}
-
-/* 遮罩与弹层 */
-.sheet-mask {
-  position: fixed;
-  left: 0; right: 0; top: 0; bottom: 0;
-  background: rgba(20, 22, 20, 0.45);
-  z-index: 300;
-  display: flex;
-  align-items: flex-end;
-}
-
-.sheet {
-  width: 100%;
-  max-height: 82vh;
-  background: #FFFFFF;
-  border-radius: 32rpx 32rpx 0 0;
-  padding: 32rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
-  animation: sheetUp 0.22s ease-out;
-  display: flex;
-  flex-direction: column;
-}
-
-@keyframes sheetUp {
-  from { transform: translateY(60rpx); opacity: 0.4; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 20rpx;
-}
-
-.sheet-title { font-size: 32rpx; font-weight: 600; }
-.sheet-close { font-size: 34rpx; color: var(--ink-3); padding: 8rpx 12rpx; }
-.sheet-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-
-.sheet-handle {
-  width: 68rpx;
-  height: 8rpx;
-  border-radius: 4rpx;
-  background: #E3E5E0;
-  margin: 0 auto 8rpx;
-}
-
-/* 分割 */
 .hr { height: 2rpx; background: var(--line); width: 100%; }
 
+/* 提示条 */
+.alert {
+  padding: 20rpx 26rpx;
+  border-radius: var(--r-sm);
+  font-size: 25rpx;
+  line-height: 1.6;
+  margin-top: 20rpx;
+}
+
+.alert-error { background: var(--expense-soft); color: #B3261E; }
+.alert-hint { background: var(--primary-soft); color: var(--primary); }
+
 /* 空态 */
-.empty { padding: 90rpx 40rpx; text-align: center; }
-.empty-icon { font-size: 76rpx; line-height: 1; margin-bottom: 20rpx; opacity: 0.6; }
+.empty {
+  padding: 96rpx 40rpx;
+  text-align: center;
+  font-size: 25rpx;
+  color: var(--ink-3);
+  line-height: 1.8;
+}
+
+.empty-icon {
+  font-size: 72rpx;
+  line-height: 1;
+  margin-bottom: 20rpx;
+  opacity: 0.6;
+}
 
 /* 头像圆 */
 .avatar {
-  width: 64rpx; height: 64rpx;
+  width: 72rpx; height: 72rpx;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: #FFFFFF; font-size: 26rpx; font-weight: 600;
+  color: #FFFFFF; font-size: 28rpx; font-weight: 700;
   flex-shrink: 0;
   overflow: hidden;
+  background: var(--primary-grad);
 }
 
 .avatar image { width: 100%; height: 100%; }
@@ -230,37 +544,4 @@ page {
 .mb16 { margin-bottom: 16rpx; }
 .mb24 { margin-bottom: 24rpx; }
 
-/* 页面容器：tabBar 页留出底部空间 */
-.page {
-  min-height: 100vh;
-  padding: 0 24rpx;
-}
-
 .bottom-space { height: calc(48rpx + env(safe-area-inset-bottom)); }
-
-/* 可选择的胶囊（分类 / 渠道 / 账户等） */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  height: 64rpx;
-  padding: 0 26rpx;
-  border-radius: 32rpx;
-  background: #F6F7F5;
-  color: #4C544C;
-  font-size: 26rpx;
-  margin: 0 14rpx 16rpx 0;
-  border: 2rpx solid transparent;
-}
-
-.chip-on {
-  background: var(--primary-soft);
-  color: var(--primary);
-  border-color: rgba(31, 138, 112, 0.35);
-  font-weight: 600;
-}
-
-.chip-add {
-  background: #FFFFFF;
-  color: var(--ink-3);
-  border: 2rpx dashed #D8DBD4;
-}

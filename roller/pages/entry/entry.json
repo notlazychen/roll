@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "记一笔",
-  "usingComponents": {}
+  "usingComponents": {
+    "app-frame": "/components/app-frame/index"
+  }
 }

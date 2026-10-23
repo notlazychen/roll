@@ -9,13 +9,16 @@ Page({
     loading: true,
     loadingMore: false,
 
-    overview: {
-      monthExpenseText: '0.00',
-      monthIncomeText: '0.00',
-      todayExpenseText: '0.00',
-      todayIncomeText: '0.00'
-    },
+    // 当前查看的月份
+    year: 0,
+    month: 0,
     monthLabel: '',
+    monthValue: '',
+    maxMonth: '',
+    canNextMonth: false,
+
+    // 概览四卡：本月支出 / 本月收入 / 本月结余 / 今日支出
+    stats: [],
 
     // 列表按日期分组
     groups: [],
@@ -24,16 +27,14 @@ Page({
     loadedCount: 0,
     total: 0,
 
-    // 筛选
+    // 筛选：搜索词 + 收支类型
     keyword: '',
-    showFilter: false,
-    filter: { type: '', category: '' },
-    filterActive: false,
-    options: { categories: [] }
+    type: ''
   },
 
   onLoad() {
-    this.setData({ monthLabel: util.monthLabel(Date.now()) })
+    const now = new Date()
+    this.setMonth(now.getFullYear(), now.getMonth(), false)
   },
 
   onShow() {
@@ -52,6 +53,61 @@ Page({
     if (this.data.hasMore && !this.data.loadingMore) this.loadMore()
   },
 
+  /* ------------------------- 月份 ------------------------- */
+
+  setMonth(year, month, reload) {
+    const now = new Date()
+    const curY = now.getFullYear()
+    const curM = now.getMonth()
+    const d = new Date(year, month, 1)
+    const isCurrent = year === curY && month === curM
+
+    this.setData({
+      year: year,
+      month: month,
+      monthLabel: util.monthLabel(d.getTime()),
+      monthValue: year + '-' + util.pad2(month + 1),
+      maxMonth: curY + '-' + util.pad2(curM + 1),
+      canNextMonth: !isCurrent && d.getTime() < new Date(curY, curM, 1).getTime()
+    })
+
+    if (reload) this.reload()
+  },
+
+  prevMonth() {
+    const y = this.data.year
+    const m = this.data.month - 1
+    if (m < 0) this.setMonth(y - 1, 11, true)
+    else this.setMonth(y, m, true)
+  },
+
+  nextMonth() {
+    if (!this.data.canNextMonth) return
+    const y = this.data.year
+    const m = this.data.month + 1
+    if (m > 11) this.setMonth(y + 1, 0, true)
+    else this.setMonth(y, m, true)
+  },
+
+  onMonthPick(e) {
+    const parts = String(e.detail.value || '').split('-')
+    const y = Number(parts[0])
+    const m = Number(parts[1]) - 1
+    if (!y || isNaN(m) || m < 0) return
+    const now = new Date()
+    // 不允许翻到未来月份
+    if (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth())) return
+    this.setMonth(y, m, true)
+  },
+
+  /** 当前月份的左闭右开区间（与 Web 的 startOfMonth / endOfMonth 一致） */
+  range() {
+    return {
+      from: new Date(this.data.year, this.data.month, 1).getTime(),
+      to: new Date(this.data.year, this.data.month + 1, 1).getTime()
+    }
+  },
+
   /* ------------------------- 加载 ------------------------- */
 
   async refresh(done) {
@@ -64,43 +120,44 @@ Page({
         loggedIn = store.isLoggedIn()
       } catch (e) {
         loggedIn = false
+        // 陌生微信：服务端不再静默建号，引导用户绑定已有账号或创建新账号
+        if (e && e.needLink) this.guideLink()
       }
     }
 
     if (!loggedIn) {
-      this.setData({ loggedIn: false, loading: false, groups: [] })
+      this.setData({ loggedIn: false, loading: false, groups: [], stats: [] })
       if (done) done()
       return
     }
 
-    // 选项源只用于筛选条，与列表并行拉取
-    const that = this
-    await Promise.all([
-      this.loadFirstPage(),
-      this.loadOverview(),
-      store.loadOptions().then(function (o) { that.setData({ options: o }) })
-    ])
+    await Promise.all([this.loadFirstPage(), this.loadStats()])
 
     this.setData({ loggedIn: true, loading: false })
     if (done) done()
   },
 
-  async loadOverview() {
-    const o = await store.overview()
-    this.setData({
-      overview: {
-        monthExpenseText: util.money(o.monthExpense || 0),
-        monthIncomeText: util.money(o.monthIncome || 0),
-        todayExpenseText: util.money(o.todayExpense || 0),
-        todayIncomeText: util.money(o.todayIncome || 0)
-      },
-      monthLabel: util.monthLabel(Date.now())
+  /** 陌生微信引导：绑定已有邮箱账号（保留账目）或创建新账号 */
+  guideLink() {
+    wx.showModal({
+      title: '绑定账号',
+      content: '这个微信还没有关联的账号。可以绑定已有的邮箱账号（历史账目保留），或创建新账号。',
+      confirmText: '去绑定',
+      cancelText: '暂不',
+      success(res) {
+        if (res.confirm) wx.navigateTo({ url: '/pages/account-link/account-link' })
+      }
     })
   },
 
   currentFilter() {
-    const f = this.data.filter
-    return { type: f.type, category: f.category, keyword: this.data.keyword }
+    const r = this.range()
+    return {
+      type: this.data.type,
+      keyword: this.data.keyword.trim(),
+      from: r.from,
+      to: r.to
+    }
   },
 
   async loadFirstPage() {
@@ -130,43 +187,62 @@ Page({
     })
   },
 
+  /** 概览四卡：当月收支用报表口径算，今日支出取 overview */
+  async loadStats() {
+    const r = this.range()
+    const now = new Date()
+    const isCurrent = this.data.year === now.getFullYear() && this.data.month === now.getMonth()
+    const prefix = isCurrent ? '本月' : this.data.month + 1 + '月'
+
+    const [rep, ov] = await Promise.all([store.report(r.from, r.to), store.overview()])
+
+    // 报表失败时，本月还能退回 overview 的口径；其它月份只能显示 0
+    const expense = rep ? rep.expense : (isCurrent ? ov.monthExpense || 0 : 0)
+    const income = rep ? rep.income : (isCurrent ? ov.monthIncome || 0 : 0)
+
+    this.setData({
+      stats: [
+        { key: 'expense', label: prefix + '支出', value: util.money(expense), tone: 'expense', accent: true },
+        { key: 'income', label: prefix + '收入', value: util.money(income), tone: 'income' },
+        { key: 'balance', label: prefix + '结余', value: util.money(income - expense), tone: 'neutral' },
+        { key: 'today', label: '今日支出', value: util.money(ov.todayExpense || 0), tone: 'plain' }
+      ]
+    })
+  },
+
   /* ------------------------- 筛选 ------------------------- */
 
   onKeyword(e) {
-    this.setData({ keyword: e.detail.value })
+    const value = e.detail.value
+    this.setData({ keyword: value })
+    // 边打边搜，350ms 防抖，避免每个字符都发一次请求
+    if (this._kwTimer) clearTimeout(this._kwTimer)
+    const that = this
+    this._kwTimer = setTimeout(function () {
+      that.reload()
+    }, 350)
+  },
+
+  onKeywordConfirm() {
+    if (this._kwTimer) clearTimeout(this._kwTimer)
+    this.reload()
   },
 
   clearKeyword() {
+    if (this._kwTimer) clearTimeout(this._kwTimer)
     this.setData({ keyword: '' })
     this.reload()
   },
 
-  toggleFilter() {
-    this.setData({ showFilter: !this.data.showFilter })
-  },
-
-  onFilterType(e) {
-    this.setData({ 'filter.type': e.currentTarget.dataset.type })
-  },
-
-  onFilterCategory(e) {
-    this.setData({ 'filter.category': e.currentTarget.dataset.cat })
-  },
-
-  applyFilter() {
-    this.setData({ showFilter: false })
-    this.reload()
-  },
-
-  resetFilter() {
-    this.setData({ filter: { type: '', category: '' }, keyword: '' })
+  onTypeFilter(e) {
+    const type = e.currentTarget.dataset.type || ''
+    if (type === this.data.type) return
+    this.setData({ type: type })
     this.reload()
   },
 
   async reload() {
-    const f = this.data.filter
-    const active = !!(f.type || f.category || this.data.keyword)
-    this.setData({ filterActive: active, loading: true, nextCursor: null })
+    this.setData({ loading: true, nextCursor: null })
     await this.loadFirstPage()
     this.setData({ loading: false })
   },
@@ -183,16 +259,12 @@ Page({
     wx.navigateTo({ url: '/pages/entry/entry?id=' + id })
   },
 
-  goCharts() {
-    wx.switchTab({ url: '/pages/charts/charts' })
-  },
-
   goMe() {
-    wx.switchTab({ url: '/pages/me/me' })
+    wx.navigateTo({ url: '/pages/me/me' })
   }
 })
 
-/** 按「天」分组，并在组标题右侧显示当天收支 */
+/** 按「天」分组，并在组标题右侧显示当天收支（与 Web 的 daySum 一致） */
 function groupByDay(items) {
   const out = []
   const map = {}
@@ -208,10 +280,8 @@ function groupByDay(items) {
     else map[key].expense += it.amount
   }
   out.forEach(function (g) {
-    const parts = []
-    if (g.expense > 0) parts.push('支出 ' + util.money(g.expense))
-    if (g.income > 0) parts.push('收入 ' + util.money(g.income))
-    g.summary = parts.join(' · ')
+    g.expenseText = g.expense > 0 ? util.money(g.expense) : ''
+    g.incomeText = g.income > 0 ? util.money(g.income) : ''
   })
   return out
 }

@@ -1,12 +1,8 @@
 const store = require('../../utils/store')
 const util = require('../../utils/util')
 
-// 分类配色（12 色循环，冷暖交替，浅色主题下对比度足够）
-const PIE_COLORS = [
-  '#1F8A70', '#E8613C', '#F2A93B', '#3F82C9', '#8E6BD4',
-  '#2BAE8A', '#D9608A', '#7B8B3A', '#4FB3C6', '#C97B3F',
-  '#6C7A89', '#B0553F'
-]
+// 分类配色：与 Web 端环形图同一套品牌绿梯度，浅色主题下对比度足够
+const PIE_COLORS = ['#1F8A70', '#2BAE8A', '#5CC9A7', '#9BD9C4', '#C8E9DD', '#8AA0A8', '#C4CCD2']
 
 Page({
   data: {
@@ -23,7 +19,7 @@ Page({
     from: 0,
     to: 0,
 
-    summary: { incomeText: '0.00', expenseText: '0.00', balanceText: '0.00' },
+    summary: { incomeText: '0.00', expenseText: '0.00', balanceText: '0.00', count: 0, avgText: '0.00', balanceHint: '' },
 
     pieType: 'expense',
     pieItems: [],
@@ -139,11 +135,16 @@ Page({
     }
 
     that._report = rep
+    const dayCount = (rep.days || []).length
+    const dailyAvg = dayCount > 0 ? Math.round(rep.expense / dayCount) : 0
     that.setData({
       summary: {
         incomeText: rep.incomeText,
         expenseText: rep.expenseText,
-        balanceText: rep.balanceText
+        balanceText: rep.balanceText,
+        count: rep.count || 0,
+        avgText: util.money(dailyAvg),
+        balanceHint: rep.balance >= 0 ? '有结余，继续保持' : '支出超过收入'
       },
       days: rep.days,
       hasDayData: rep.days.some(function (d) { return d.income > 0 || d.expense > 0 }),
@@ -178,7 +179,7 @@ Page({
     const src = this.data.pieType === 'income' ? rep.incomeCategories : rep.categories
 
     let acc = 0
-    const items = src.slice(0, 8).map(function (c, i) {
+    const items = src.slice(0, 6).map(function (c, i) {
       return {
         name: c.name,
         amountText: c.amountText,
@@ -189,8 +190,8 @@ Page({
       }
     })
 
-    // 超过 8 类时把剩下的合并成「其他」，饼图才不会碎成一片
-    const rest = src.slice(8)
+    // 超过 6 类时把剩下的合并成「其他」，和 Web 环形图口径一致
+    const rest = src.slice(6)
     if (rest.length > 0) {
       const amount = rest.reduce(function (s, c) { return s + c.amount }, 0)
       const total = src.reduce(function (s, c) { return s + c.amount }, 0)
@@ -200,7 +201,7 @@ Page({
         count: rest.reduce(function (s, c) { return s + c.count }, 0),
         percent: total > 0 ? amount / total : 0,
         percentText: (total > 0 ? (amount / total) * 100 : 0).toFixed(1) + '%',
-        color: PIE_COLORS[8 % PIE_COLORS.length]
+        color: PIE_COLORS[6 % PIE_COLORS.length]
       })
     }
 
@@ -303,9 +304,9 @@ Page({
       ctx.fillText(text, align === 'left' ? padL : (align === 'right' ? w - padR : x), h - 10)
     }
 
-    // 两条曲线
-    this.drawLine(ctx, days.map(function (d) { return d.expense }), xOf, yOf, '#E8613C', 'rgba(232,97,60,0.10)')
-    this.drawLine(ctx, days.map(function (d) { return d.income }), xOf, yOf, '#1F9D6B', 'rgba(31,157,107,0.10)')
+    // 两条曲线（颜色与 Web 折线图一致）
+    this.drawLine(ctx, days.map(function (d) { return d.expense }), xOf, yOf, '#E05B4A', 'rgba(224,91,74,0.10)')
+    this.drawLine(ctx, days.map(function (d) { return d.income }), xOf, yOf, '#1F8A70', 'rgba(31,138,112,0.10)')
   },
 
   drawLine(ctx, values, xOf, yOf, color, fill) {

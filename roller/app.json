@@ -3,35 +3,16 @@
     "pages/index/index",
     "pages/charts/charts",
     "pages/me/me",
+    "pages/account-link/account-link",
     "pages/entry/entry",
     "pages/options/options"
   ],
   "window": {
-    "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#FFFFFF",
-    "navigationBarTitleText": "记账本",
+    "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#F5F6F3"
-  },
-  "tabBar": {
-    "color": "#9AA096",
-    "selectedColor": "#1F8A70",
-    "backgroundColor": "#FFFFFF",
-    "borderStyle": "white",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "明细"
-      },
-      {
-        "pagePath": "pages/charts/charts",
-        "text": "图表"
-      },
-      {
-        "pagePath": "pages/me/me",
-        "text": "我的"
-      }
-    ]
+    "navigationBarTitleText": "记账",
+    "backgroundColor": "#F5F6F3",
+    "backgroundTextStyle": "dark"
   },
   "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"

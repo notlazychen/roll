@@ -1,47 +1,22 @@
-.page {
-  min-height: 100vh;
-  padding: 16rpx 24rpx 0;
-}
+/* 我的 —— 用 Web 的用户卡 + 面板语言，去掉渐变 hero */
 
-/* ---------- 头部 ---------- */
-.hero {
-  margin-top: 12rpx;
-  padding: 34rpx 28rpx 24rpx;
-  border-radius: 28rpx;
-  background: linear-gradient(135deg, #1F8A70 0%, #27A184 60%, #2BAE8A 100%);
-  color: #FFFFFF;
-  box-shadow: 0 12rpx 32rpx rgba(31, 138, 112, 0.22);
-}
-
-.hero-guest {
-  text-align: center;
-  padding: 56rpx 28rpx 44rpx;
-}
-
-.hero-guest .hero-avatar {
-  font-size: 68rpx;
-  margin-bottom: 16rpx;
-}
-
-.hero-guest .hero-name {
-  font-size: 34rpx;
-  font-weight: 600;
-}
-
-.hero-row {
+.user-card {
   display: flex;
   align-items: center;
+  padding: 26rpx 28rpx;
+  margin-top: 4rpx;
 }
 
 .avatar-btn {
-  width: 112rpx;
-  height: 112rpx;
+  width: 88rpx;
+  height: 88rpx;
   padding: 0;
   margin: 0 22rpx 0 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--primary-grad);
   overflow: hidden;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .avatar-btn::after {
@@ -49,146 +24,95 @@
 }
 
 .avatar-img {
-  width: 112rpx;
-  height: 112rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
 }
 
 .avatar-ph {
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 50%;
+  width: 88rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42rpx;
-  font-weight: 600;
+  font-size: 34rpx;
+  font-weight: 700;
   color: #FFFFFF;
 }
 
-.hero-main {
-  min-width: 0;
-}
-
-.hero-name {
-  font-size: 34rpx;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hero-sub {
-  font-size: 22rpx;
-  opacity: 0.82;
-  margin-top: 6rpx;
-}
-
-.hero-edit {
-  height: 52rpx;
-  padding: 0 20rpx;
-  line-height: 52rpx;
-  border-radius: 26rpx;
-  background: rgba(255, 255, 255, 0.2);
-  font-size: 22rpx;
-  flex-shrink: 0;
-}
-
-.hero-stats {
+.user-info {
   display: flex;
-  align-items: center;
-  margin-top: 30rpx;
-  padding-top: 24rpx;
-  border-top: 2rpx solid rgba(255, 255, 255, 0.18);
+  flex-direction: column;
 }
 
-.hs-item {
-  flex: 1;
-  text-align: center;
+.user-name {
+  font-size: 29rpx;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.hs-num {
-  font-size: 32rpx;
-  font-weight: 700;
-}
-
-.hs-label {
-  font-size: 21rpx;
-  opacity: 0.8;
+.user-sub {
+  font-size: 22rpx;
+  color: var(--ink-3);
   margin-top: 4rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.hs-line {
-  width: 2rpx;
-  height: 44rpx;
-  background: rgba(255, 255, 255, 0.22);
+.mini-btn {
+  flex-shrink: 0;
+  height: 56rpx;
+  padding: 0 22rpx;
+  line-height: 56rpx;
+  border-radius: 999rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 23rpx;
+  font-weight: 600;
 }
 
-/* ---------- 卡片 ---------- */
-.card-block {
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 24rpx 24rpx 8rpx;
-  margin-top: 20rpx;
-}
-
-.card-title {
-  font-size: 24rpx;
-  color: #9AA096;
-  padding: 4rpx 0 12rpx;
-}
-
+/* ---------- 设置行 ---------- */
 .set-row {
   display: flex;
   align-items: center;
-  min-height: 104rpx;
-  border-bottom: 2rpx solid #F3F4F1;
+  padding: 26rpx 0;
+  border-bottom: 2rpx solid var(--line);
 }
 
 .set-row:last-child {
   border-bottom: none;
 }
 
-.set-row-last {
-  border-bottom: none;
-}
-
-.set-icon {
-  width: 56rpx;
-  font-size: 32rpx;
-  flex-shrink: 0;
-}
-
 .set-name {
-  font-size: 27rpx;
-  color: #1F2420;
+  font-size: 28rpx;
+  color: var(--ink);
 }
 
 .set-name.danger {
-  color: #E8613C;
+  color: var(--expense);
 }
 
 .set-sub {
-  font-size: 21rpx;
-  color: #9AA096;
+  font-size: 22rpx;
+  color: var(--ink-3);
   margin-top: 4rpx;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .set-arrow {
   font-size: 32rpx;
   color: #C4C8C0;
-  margin-left: 12rpx;
+  margin-left: 16rpx;
 }
 
-.login-err {
-  margin-top: 20rpx;
-  padding: 18rpx 20rpx;
-  border-radius: 16rpx;
-  background: #FDECE6;
-  color: #C0492A;
-  font-size: 23rpx;
-  line-height: 1.6;
+.set-switch {
+  transform: scale(0.86);
+  transform-origin: right center;
+  margin-right: -8rpx;
 }

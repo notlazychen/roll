@@ -1,0 +1,254 @@
+/* app-frame —— 顶栏 + 抽屉，样式对齐 Web 的 layout.css 移动端断点 */
+
+/* 组件内样式隔离，app.wxss 的 box-sizing 不会继承进来，这里补一份 */
+view,
+text,
+image {
+  box-sizing: border-box;
+}
+
+.mobile-bar {
+  display: flex;
+  align-items: center;
+  padding-left: 28rpx;
+  padding-right: 28rpx;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.bar-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 汉堡：三条线 */
+.burger {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 9rpx;
+  padding: 10rpx 8rpx;
+  margin-left: -8rpx;
+}
+
+.burger-line {
+  height: 4rpx;
+  width: 100%;
+  border-radius: 2rpx;
+  background: var(--ink);
+}
+
+.back {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 52rpx;
+  text-align: center;
+  font-size: 40rpx;
+  color: var(--ink);
+  margin-left: -8rpx;
+}
+
+.bar-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--ink);
+  margin-left: 16rpx;
+}
+
+.bar-brand {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+
+/* ---------------- 抽屉 ---------------- */
+
+.drawer-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(16, 24, 40, 0.42);
+  z-index: 70;
+}
+
+.drawer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 544rpx;
+  max-width: 84vw;
+  background: var(--card);
+  border-radius: 0 40rpx 40rpx 0;
+  box-shadow: 0 0 80rpx rgba(15, 28, 45, 0.14);
+  transform: translateX(-106%);
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.25, 1);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-open {
+  transform: translateX(0);
+}
+
+.drawer-scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+}
+
+.tool-badge {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #1F8A70 0%, #2BAE8A 100%);
+}
+
+.tool-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  font-weight: 700;
+  margin-left: 16rpx;
+}
+
+.drawer-close {
+  display: none;
+}
+
+.nav-label {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  margin: 36rpx 0 12rpx;
+  padding-left: 8rpx;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  border-radius: var(--r-sm);
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.nav-item:active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.nav-icon {
+  font-size: 28rpx;
+  margin-right: 16rpx;
+}
+
+.nav-text {
+  flex: 1;
+}
+
+.nav-on {
+  background: var(--primary-grad);
+  color: #FFFFFF;
+  box-shadow: 0 12rpx 32rpx rgba(31, 138, 112, 0.24);
+}
+
+.drawer-spacer {
+  flex: 1;
+  min-height: 40rpx;
+}
+
+.drawer-foot {
+  font-size: 21rpx;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  padding: 0 4rpx 16rpx;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: 0 8rpx 30rpx rgba(15, 28, 45, 0.08);
+}
+
+.user-card .avatar {
+  width: 72rpx;
+  height: 72rpx;
+  flex: 0 0 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(90deg, #1F8A70 0%, #2BAE8A 100%);
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 18rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.user-sub {
+  font-size: 21rpx;
+  color: var(--ink-3);
+  margin-top: 2rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.user-arrow {
+  font-size: 32rpx;
+  color: #C4C8C0;
+}

@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "账号",
+  "usingComponents": {
+    "app-frame": "/components/app-frame/index"
+  }
+}

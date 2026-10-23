@@ -1,276 +1,136 @@
-.page {
-  min-height: 100vh;
-  padding: 16rpx 24rpx 0;
-}
-
-/* ---------- 区间切换 ---------- */
-.tabs {
-  display: flex;
-  background: #ECEDEA;
-  border-radius: 22rpx;
-  padding: 6rpx;
-  margin-top: 8rpx;
-}
-
-.tab {
-  flex: 1;
-  height: 64rpx;
-  line-height: 64rpx;
-  text-align: center;
-  font-size: 27rpx;
-  color: #5C645C;
-  border-radius: 18rpx;
-}
-
-.tab-on {
-  background: #FFFFFF;
-  color: #1F2420;
-  font-weight: 600;
-  box-shadow: 0 2rpx 8rpx rgba(31, 36, 32, 0.08);
-}
+/* 图表页 —— 对齐 Web 端 ChartsPage 的移动端布局：
+   区间分段 → 区间导航 → 三张概览卡 → 面板化图表卡 → 排行 */
 
 .range {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 26rpx 8rpx 18rpx;
+  padding: 22rpx 4rpx 18rpx;
 }
 
 .range-nav {
-  width: 64rpx;
-  height: 64rpx;
+  width: 60rpx;
+  height: 60rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 32rpx;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 2rpx solid var(--line);
   border-radius: 50%;
-  background: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34rpx;
-  color: #1F2420;
-  line-height: 1;
-  padding-bottom: 4rpx;
 }
 
 .range-nav:active {
-  background: #EDEFEB;
+  background: var(--primary-soft);
+  color: var(--primary);
 }
 
 .range-nav-off {
   color: #D5D8D1;
-  background: #F2F3F1;
+  background: #F2F3F5;
 }
 
 .range-center {
-  text-align: center;
-}
-
-.range-label {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1F2420;
-}
-
-.range-sub {
-  font-size: 22rpx;
-  color: #9AA096;
-  margin-top: 4rpx;
-}
-
-/* ---------- 收支汇总 ---------- */
-.totals {
-  display: flex;
-  align-items: center;
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 28rpx 8rpx;
-}
-
-.total-item {
   flex: 1;
   text-align: center;
 }
 
-.total-label {
-  font-size: 22rpx;
-  color: #9AA096;
-}
-
-.total-num {
-  font-size: 32rpx;
-  font-weight: 700;
-  margin-top: 8rpx;
-}
-
-.total-line {
-  width: 2rpx;
-  height: 48rpx;
-  background: #F0F1EE;
-}
-
-/* ---------- 卡片 ---------- */
-.card-block {
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 26rpx 24rpx;
-  margin-top: 20rpx;
-}
-
-.block-title {
-  font-size: 28rpx;
+.range-label {
+  display: block;
+  font-size: 29rpx;
   font-weight: 600;
-  color: #1F2420;
+  color: var(--ink);
 }
 
-.mini-switch {
+.range-sub {
+  display: block;
+  font-size: 21rpx;
+  color: var(--ink-3);
+  margin-top: 2rpx;
+}
+
+/* ---------- 环形图 ---------- */
+.donut-wrap {
   display: flex;
-  background: #F2F3F1;
-  border-radius: 18rpx;
-  padding: 4rpx;
-}
-
-.mini-item {
-  padding: 0 20rpx;
-  height: 48rpx;
-  line-height: 48rpx;
-  font-size: 22rpx;
-  color: #5C645C;
-  border-radius: 14rpx;
-}
-
-.mini-on {
-  background: #FFFFFF;
-  color: #1F2420;
-  font-weight: 600;
-}
-
-/* ---------- 饼图 ---------- */
-.pie-wrap {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  margin-top: 28rpx;
 }
 
-.pie {
-  width: 240rpx;
-  height: 240rpx;
+.donut {
+  width: 300rpx;
+  height: 300rpx;
   border-radius: 50%;
   position: relative;
-  flex-shrink: 0;
-  background: #F2F3F1;
+  background: #F1F3F6;
 }
 
-.pie-hole {
+.donut-hole {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 150rpx;
-  height: 150rpx;
-  margin: -75rpx 0 0 -75rpx;
+  width: 188rpx;
+  height: 188rpx;
+  margin: -94rpx 0 0 -94rpx;
   border-radius: 50%;
-  background: #FFFFFF;
+  background: var(--card);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.pie-hole-label {
-  font-size: 20rpx;
-  color: #9AA096;
+.donut-hole-label {
+  font-size: 21rpx;
+  color: var(--ink-3);
 }
 
-.pie-hole-num {
-  font-size: 24rpx;
+.donut-hole-num {
+  margin-top: 4rpx;
+  font-size: 26rpx;
   font-weight: 700;
-  color: #1F2420;
-  margin-top: 2rpx;
+  color: var(--ink);
 }
 
 .legend {
-  flex: 1;
-  margin-left: 28rpx;
-  min-width: 0;
+  width: 100%;
+  margin-top: 28rpx;
 }
 
-.legend-item {
+.legend-row {
   display: flex;
   align-items: center;
-  margin-bottom: 12rpx;
+  padding: 10rpx 0;
 }
 
 .legend-dot {
-  width: 14rpx;
-  height: 14rpx;
-  border-radius: 4rpx;
-  margin-right: 12rpx;
-  flex-shrink: 0;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 5rpx;
+  flex: 0 0 16rpx;
+  margin-right: 14rpx;
 }
 
 .legend-name {
   flex: 1;
-  font-size: 23rpx;
-  color: #4C544C;
+  min-width: 0;
+  font-size: 25rpx;
+  color: var(--ink-2);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .legend-pct {
-  font-size: 22rpx;
-  color: #9AA096;
-  margin-left: 8rpx;
+  font-size: 23rpx;
+  color: var(--ink-3);
+  margin-left: 14rpx;
 }
 
-/* ---------- 分类明细 ---------- */
-.cat-list {
-  margin-top: 24rpx;
-  padding-top: 8rpx;
-  border-top: 2rpx solid #F3F4F1;
-}
-
-.cat-row {
-  display: flex;
-  align-items: flex-start;
-  padding: 18rpx 0 6rpx;
-}
-
-.cat-dot {
-  width: 14rpx;
-  height: 14rpx;
-  border-radius: 4rpx;
-  margin: 10rpx 16rpx 0 0;
-  flex-shrink: 0;
-}
-
-.cat-name {
-  font-size: 26rpx;
-  color: #1F2420;
-}
-
-.cat-amount {
-  font-size: 26rpx;
+.legend-amount {
+  min-width: 140rpx;
+  text-align: right;
+  font-size: 25rpx;
   font-weight: 600;
-  color: #1F2420;
-}
-
-.bar {
-  height: 10rpx;
-  border-radius: 5rpx;
-  background: #F2F3F1;
-  margin-top: 10rpx;
-  overflow: hidden;
-}
-
-.bar-in {
-  height: 100%;
-  border-radius: 5rpx;
-}
-
-.cat-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 20rpx;
-  color: #9AA096;
-  margin-top: 8rpx;
+  color: var(--ink);
 }
 
 /* ---------- 折线图 ---------- */
@@ -283,26 +143,26 @@
   display: flex;
   align-items: center;
   font-size: 21rpx;
-  color: #7C847C;
-  margin-left: 20rpx;
+  color: var(--ink-2);
+  margin-left: 18rpx;
 }
 
 .li-dot {
-  width: 12rpx;
-  height: 12rpx;
+  width: 14rpx;
+  height: 14rpx;
   border-radius: 50%;
   margin-right: 8rpx;
 }
 
 .chart-box {
   position: relative;
-  margin-top: 20rpx;
-  height: 340rpx;
+  margin-top: 12rpx;
+  height: 300rpx;
 }
 
 .line-canvas {
   width: 100%;
-  height: 340rpx;
+  height: 300rpx;
 }
 
 .chart-empty {
@@ -312,31 +172,67 @@
   top: 44%;
   text-align: center;
   font-size: 24rpx;
-  color: #B4B9B0;
+  color: var(--ink-3);
 }
 
-/* ---------- 渠道排行 ---------- */
+/* ---------- 排行 ---------- */
 .rank-row {
   display: flex;
-  align-items: flex-start;
-  margin-top: 22rpx;
+  align-items: center;
+  padding: 14rpx 0;
 }
 
-.rank-index {
-  width: 40rpx;
-  font-size: 24rpx;
-  font-weight: 700;
-  color: #C4C8C0;
-  margin-top: 2rpx;
+.rank-no {
+  width: 44rpx;
+  height: 44rpx;
+  flex: 0 0 44rpx;
+  margin-right: 14rpx;
+  border-radius: 12rpx;
+  background: var(--fill);
+  color: var(--ink-2);
+  font-size: 21rpx;
+  font-weight: 600;
+  text-align: center;
+  line-height: 44rpx;
 }
 
 .rank-name {
-  font-size: 26rpx;
-  color: #1F2420;
+  width: 132rpx;
+  flex: 0 0 132rpx;
+  font-size: 25rpx;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rank-bar {
+  flex: 1;
+  height: 14rpx;
+  margin: 0 16rpx;
+  border-radius: 999rpx;
+  background: #F1F3F6;
+  overflow: hidden;
+}
+
+.rank-bar-in {
+  display: block;
+  height: 100%;
+  border-radius: 999rpx;
+  background: var(--primary-grad);
+}
+
+.rank-count {
+  font-size: 21rpx;
+  color: var(--ink-3);
+  min-width: 74rpx;
+  text-align: right;
 }
 
 .rank-amount {
-  font-size: 26rpx;
+  min-width: 140rpx;
+  text-align: right;
+  font-size: 25rpx;
   font-weight: 600;
-  color: #1F2420;
+  color: var(--ink);
 }

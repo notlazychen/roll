@@ -33,6 +33,7 @@ Page({
     showEdit: false,
     editingId: 0,
     editName: '',
+    addName: '',
     addParent: '',
 
     // 规则
@@ -53,8 +54,7 @@ Page({
 
   applyKind(kind) {
     const label = (KINDS.filter(function (k) { return k.key === kind })[0] || {}).label || '分类'
-    this.setData({ kind: kind, kindLabel: label, headSub: HEAD_SUB[kind] || '' })
-    wx.setNavigationBarTitle({ title: label + '管理' })
+    this.setData({ kind: kind, kindLabel: label, headSub: HEAD_SUB[kind] || '', addName: '' })
     this.load()
   },
 
@@ -71,6 +71,9 @@ Page({
     that.setData({ options: options })
 
     const kind = this.data.kind
+    if (kind === 'channel' && !that.data.addParent && options.categories.length > 0) {
+      that.setData({ addParent: options.categories[0].name })
+    }
     const source = {
       category: options.categories,
       consumer: options.consumers,
@@ -112,11 +115,30 @@ Page({
 
   /* ------------------------- 新增 / 改名 ------------------------- */
 
-  openAdd() {
-    const addParent = this.data.addParent || (this.data.kind === 'channel'
-      ? ((this.data.options.categories[0] || {}).name || '')
-      : '')
-    this.setData({ showEdit: true, editingId: 0, editName: '', addParent: addParent })
+  onAddName(e) {
+    this.setData({ addName: e.detail.value })
+  },
+
+  /** 面板里的内联新增（与 Web 的 addRow 一致） */
+  async submitAdd() {
+    const name = String(this.data.addName || '').trim()
+    if (!name) return util.toast('请输入名称')
+    if (this._adding) return
+
+    const kind = this.data.kind
+    if (kind === 'channel' && !this.data.addParent) return util.toast('请选择所属分类')
+
+    this._adding = true
+    const res = await store.addOption(kind, name, kind === 'channel' ? this.data.addParent : '')
+    this._adding = false
+
+    if (!res.ok) return util.toast(res.error || '添加失败')
+
+    this.setData({ addName: '' })
+    util.haptic()
+    util.toast('已添加', 'success')
+    getApp().markDirty()
+    this.load()
   },
 
   pickParent(e) {

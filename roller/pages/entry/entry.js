@@ -22,6 +22,7 @@ Page({
     isEdit: false,
     editId: 0,
     autoFocus: false,
+    frameTitle: '记一笔',
 
     form: {
       type: 'expense',
@@ -62,13 +63,17 @@ Page({
 
   async onLoad(query) {
     const id = Number(query && query.id) || 0
-    this.setData({ isEdit: !!id, editId: id, autoFocus: !id })
+    this.setData({
+      isEdit: !!id,
+      editId: id,
+      autoFocus: !id,
+      frameTitle: id ? '账目详情' : '记一笔'
+    })
 
     const options = await store.loadOptions()
     this.applyOptions(options)
 
     if (id) {
-      wx.setNavigationBarTitle({ title: '账目详情' })
       const entry = await store.getEntry(id)
       if (!entry) {
         util.toast('账目不存在或已删除')
@@ -86,8 +91,10 @@ Page({
           tradeAt: entry.tradeAt,
           remark: entry.remark,
           tags: entry.tags.slice()
-        }
+        },
+        channelGroup: entry.category
       })
+      this.syncChannelView()
       this.syncDerived()
       return
     }
@@ -95,9 +102,13 @@ Page({
     // 新建：默认账户取「支付宝」，分类取第一个，交易时间取现在
     const now = Date.now()
     const patch = { 'form.tradeAt': now }
-    if (options.categories.length > 0) patch['form.category'] = options.categories[0].name
+    if (options.categories.length > 0) {
+      patch['form.category'] = options.categories[0].name
+      patch.channelGroup = options.categories[0].name
+    }
     if (options.accounts.some(function (a) { return a.name === '支付宝' })) patch['form.account'] = '支付宝'
     this.setData(patch)
+    this.syncChannelView()
     this.syncDerived()
   },
 
@@ -125,6 +136,13 @@ Page({
   onType(e) {
     const type = e.currentTarget.dataset.type
     this.setData({ 'form.type': type })
+  },
+
+  /** 渠道 chips：点一下选中，再点一下取消 */
+  onChannelChip(e) {
+    const name = e.currentTarget.dataset.name
+    this.setData({ 'form.channel': this.data.form.channel === name ? '' : name })
+    this.syncDerived()
   },
 
   onAmount(e) {

@@ -1,160 +1,217 @@
-<view class="page">
+<app-frame mode="back" title="我的">
+  <view class="page">
 
-  <!-- ============ 未登录 ============ -->
-  <block wx:if="{{!loggedIn && !loading}}">
-    <view class="hero hero-guest">
-      <view class="hero-avatar">👤</view>
-      <view class="hero-name">未登录</view>
-      <view class="hero-sub">登录后才能记账，账目按微信账号隔离</view>
+    <view class="topbar">
+      <text class="topbar-title">我的</text>
     </view>
 
-    <view class="card-block">
-      <view class="btn btn-primary" bindtap="login">微信一键登录</view>
-      <view class="t-tiny mt16" style="text-align:center;">登录后可记录收支、查看报表，所有数据只属于你</view>
-      <view class="login-err" wx:if="{{loginError}}">{{loginError}}</view>
-    </view>
-  </block>
+    <!-- ============ 未登录 ============ -->
+    <block wx:if="{{!loggedIn && !loading}}">
+      <view class="card user-card">
+        <view class="avatar">哈</view>
+        <view class="flex1 user-info">
+          <text class="user-name">未登录</text>
+          <text class="user-sub">登录后才能记账，账目按微信账号隔离</text>
+        </view>
+      </view>
 
-  <!-- ============ 已登录 ============ -->
-  <block wx:else>
-    <view class="hero">
-      <view class="hero-row">
+      <view class="panel">
+        <view class="btn btn-primary" bindtap="login">微信一键登录</view>
+        <view class="t-tiny mt16">登录后可记录收支、查看报表，所有数据只属于你</view>
+        <view class="alert alert-error" wx:if="{{loginError}}">{{loginError}}</view>
+      </view>
+    </block>
+
+    <!-- ============ 已登录 ============ -->
+    <block wx:else>
+      <view class="card user-card">
         <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
           <image wx:if="{{me.avatarUrl}}" class="avatar-img" src="{{me.avatarUrl}}" mode="aspectFill"></image>
-          <view wx:else class="avatar-ph">{{me.initial}}</view>
+          <text wx:else class="avatar-ph">{{me.initial}}</text>
         </button>
-        <view class="flex1 hero-main">
-          <view class="hero-name">{{me.name || '微信用户'}}</view>
-          <view class="hero-sub">已记 {{stats.entryCount}} 笔 · {{stats.sinceText}}</view>
+        <view class="flex1 user-info">
+          <view class="user-name">{{me.name || '微信用户'}}</view>
+          <view class="user-sub">已记 {{stats.entryCount}} 笔 · {{stats.sinceText}}</view>
         </view>
-        <view class="hero-edit" bindtap="editName">改昵称</view>
+        <view class="mini-btn" bindtap="editName">改昵称</view>
       </view>
 
-      <view class="hero-stats">
-        <view class="hs-item">
-          <view class="hs-num num">￥{{month.expenseText}}</view>
-          <view class="hs-label">本月支出</view>
+      <view class="stats">
+        <view class="stat-card stat-accent">
+          <text class="stat-label">本月支出</text>
+          <text class="stat-value num expense-text">￥{{month.expenseText}}</text>
         </view>
-        <view class="hs-line"></view>
-        <view class="hs-item">
-          <view class="hs-num num">￥{{month.incomeText}}</view>
-          <view class="hs-label">本月收入</view>
+        <view class="stat-card">
+          <text class="stat-label">本月收入</text>
+          <text class="stat-value num income-text">￥{{month.incomeText}}</text>
         </view>
+      </view>
+
+      <!-- ============ 记账设置 ============ -->
+      <view class="panel">
+        <text class="panel-title">记账设置</text>
+
+        <view class="set-row" bindtap="goOptions" data-kind="category">
+          <view class="flex1">
+            <view class="set-name">分类管理</view>
+            <view class="set-sub">{{counts.categories}} 个分类</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="goOptions" data-kind="channel">
+          <view class="flex1">
+            <view class="set-name">渠道管理</view>
+            <view class="set-sub">{{counts.channels}} 个渠道</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="goOptions" data-kind="consumer">
+          <view class="flex1">
+            <view class="set-name">消费者管理</view>
+            <view class="set-sub">{{counts.consumers}} 个</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="goOptions" data-kind="account">
+          <view class="flex1">
+            <view class="set-name">账户管理</view>
+            <view class="set-sub">{{counts.accounts}} 个账户</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="goOptions" data-kind="tag">
+          <view class="flex1">
+            <view class="set-name">标签管理</view>
+            <view class="set-sub">{{counts.tags}} 个标签 · 备注自动识别</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+      </view>
+
+      <!-- ============ 偏好 ============ -->
+      <view class="panel">
+        <text class="panel-title">偏好</text>
+        <view class="set-row">
+          <view class="flex1">
+            <view class="set-name">备注自动打标签</view>
+            <view class="set-sub">按关键词规则从备注里识别标签</view>
+          </view>
+          <switch class="set-switch" checked="{{me.tagAutoEnabled}}" color="#1F8A70" bindchange="onAutoTagChange" />
+        </view>
+      </view>
+
+      <!-- ============ 账号 ============ -->
+      <view class="panel">
+        <text class="panel-title">账号</text>
+
+        <view class="set-row" wx:if="{{!me.wechatBound}}" bindtap="bindWechat">
+          <view class="flex1">
+            <view class="set-name">绑定微信</view>
+            <view class="set-sub">绑定后本微信直接登录这个账号；若微信已属于其他账号会询问是否合并</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" wx:if="{{!me.email}}" bindtap="setPassword">
+          <view class="flex1">
+            <view class="set-name">设置邮箱和密码</view>
+            <view class="set-sub">设置后可以在网页版登录同一个账号</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" wx:if="{{!me.wechatBound}}" bindtap="goEmailLogin">
+          <view class="flex1">
+            <view class="set-name">用邮箱账号登录</view>
+            <view class="set-sub">切换到邮箱注册的账号（历史账目不会合并）</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="webLogin">
+          <view class="flex1">
+            <view class="set-name">扫一扫登录网页</view>
+            <view class="set-sub">在网页版输入配对码或扫这里，免输密码</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="copyBaseUrl">
+          <view class="flex1">
+            <view class="set-name">连接信息</view>
+            <view class="set-sub">{{env.baseUrl}}</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+
+        <view class="set-row" bindtap="logout">
+          <view class="flex1">
+            <view class="set-name danger">退出登录</view>
+          </view>
+          <text class="set-arrow">›</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="bottom-space" style="height: 80rpx;"></view>
+
+    <!-- ============ 改昵称弹层 ============ -->
+    <view class="sheet-mask" wx:if="{{showName}}" bindtap="closeName">
+      <view class="sheet" catchtap="noop">
+        <view class="sheet-handle"></view>
+        <view class="sheet-head">
+          <text class="sheet-title">修改昵称</text>
+          <text class="sheet-close" bindtap="closeName">✕</text>
+        </view>
+        <input
+          class="input"
+          type="nickname"
+          value="{{nameInput}}"
+          maxlength="16"
+          focus="{{showName}}"
+          placeholder="请输入昵称"
+          placeholder-class="ph"
+          bindinput="onNameInput"
+          bindblur="onNameInput"
+        />
+        <view class="btn btn-primary mt24" bindtap="saveName">保存</view>
       </view>
     </view>
 
-    <!-- 设置 -->
-    <view class="card-block">
-      <view class="card-title">记账设置</view>
-
-      <view class="set-row" bindtap="goOptions" data-kind="category">
-        <text class="set-icon">🗂️</text>
-        <view class="flex1">
-          <view class="set-name">分类管理</view>
-          <view class="set-sub">{{counts.categories}} 个分类</view>
+    <!-- ============ 设置邮箱和密码弹层 ============ -->
+    <view class="sheet-mask" wx:if="{{showPwd}}" bindtap="closePwd">
+      <view class="sheet" catchtap="noop">
+        <view class="sheet-handle"></view>
+        <view class="sheet-head">
+          <text class="sheet-title">设置邮箱和密码</text>
+          <text class="sheet-close" bindtap="closePwd">✕</text>
         </view>
-        <text class="set-arrow">›</text>
-      </view>
-
-      <view class="set-row" bindtap="goOptions" data-kind="channel">
-        <text class="set-icon">🏪</text>
-        <view class="flex1">
-          <view class="set-name">渠道管理</view>
-          <view class="set-sub">{{counts.channels}} 个渠道</view>
+        <view class="t-tiny">绑定邮箱并设置密码后，就可以在网页版用邮箱登录这个账号，账目完全同步。</view>
+        <input
+          class="input mt16"
+          type="text"
+          value="{{pwdEmail}}"
+          placeholder="邮箱地址"
+          placeholder-class="ph"
+          bindinput="onPwdEmail"
+        />
+        <input
+          class="input mt12"
+          type="text"
+          password
+          value="{{pwdPass}}"
+          placeholder="密码（至少 8 位，含字母和数字）"
+          placeholder-class="ph"
+          bindinput="onPwdPass"
+        />
+        <view class="btn btn-primary mt24 {{pwdBusy ? 'btn-disabled' : ''}}" bindtap="submitPassword">
+          {{pwdBusy ? '设置中…' : '保存'}}
         </view>
-        <text class="set-arrow">›</text>
       </view>
-
-      <view class="set-row" bindtap="goOptions" data-kind="consumer">
-        <text class="set-icon">👥</text>
-        <view class="flex1">
-          <view class="set-name">消费者管理</view>
-          <view class="set-sub">{{counts.consumers}} 个</view>
-        </view>
-        <text class="set-arrow">›</text>
-      </view>
-
-      <view class="set-row" bindtap="goOptions" data-kind="account">
-        <text class="set-icon">💳</text>
-        <view class="flex1">
-          <view class="set-name">账户管理</view>
-          <view class="set-sub">{{counts.accounts}} 个账户</view>
-        </view>
-        <text class="set-arrow">›</text>
-      </view>
-
-      <view class="set-row" bindtap="goOptions" data-kind="tag">
-        <text class="set-icon">🏷️</text>
-        <view class="flex1">
-          <view class="set-name">标签管理</view>
-          <view class="set-sub">{{counts.tags}} 个标签 · 备注自动识别</view>
-        </view>
-        <text class="set-arrow">›</text>
-      </view>
-    </view>
-
-    <view class="card-block">
-      <view class="card-title">偏好</view>
-      <view class="set-row">
-        <text class="set-icon">✨</text>
-        <view class="flex1">
-          <view class="set-name">备注自动打标签</view>
-          <view class="set-sub">按关键词规则从备注里识别标签</view>
-        </view>
-        <switch checked="{{me.tagAutoEnabled}}" color="#1F8A70" bindchange="onAutoTagChange" />
-      </view>
-    </view>
-
-    <view class="card-block">
-      <view class="card-title">账号</view>
-      <view class="set-row" bindtap="webLogin">
-        <text class="set-icon">💻</text>
-        <view class="flex1">
-          <view class="set-name">扫一扫登录网页</view>
-          <view class="set-sub">在网页版输入配对码或扫这里，免输密码</view>
-        </view>
-        <text class="set-arrow">›</text>
-      </view>
-      <view class="set-row" bindtap="copyBaseUrl">
-        <text class="set-icon">🔌</text>
-        <view class="flex1">
-          <view class="set-name">连接信息</view>
-          <view class="set-sub">{{env.baseUrl}}</view>
-        </view>
-        <text class="set-arrow">›</text>
-      </view>
-      <view class="set-row set-row-last" bindtap="logout">
-        <text class="set-icon">🚪</text>
-        <view class="flex1">
-          <view class="set-name danger">退出登录</view>
-        </view>
-        <text class="set-arrow">›</text>
-      </view>
-    </view>
-  </block>
-
-  <view class="bottom-space" style="height: 80rpx;"></view>
-
-  <!-- ============ 改昵称弹层 ============ -->
-  <view class="sheet-mask" wx:if="{{showName}}" bindtap="closeName">
-    <view class="sheet" catchtap="noop">
-      <view class="sheet-handle"></view>
-      <view class="sheet-head">
-        <text class="sheet-title">修改昵称</text>
-        <text class="sheet-close" bindtap="closeName">✕</text>
-      </view>
-      <input
-        class="input"
-        type="nickname"
-        value="{{nameInput}}"
-        maxlength="16"
-        focus="{{showName}}"
-        placeholder="请输入昵称"
-        placeholder-class="ph"
-        bindinput="onNameInput"
-        bindblur="onNameInput"
-      />
-      <view class="btn btn-primary mt24" bindtap="saveName">保存</view>
     </view>
   </view>
-</view>
+</app-frame>

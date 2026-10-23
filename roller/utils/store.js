@@ -99,6 +99,8 @@ function decorate(e) {
     category: e.category,
     icon: util.categoryIcon(e.category),
     channel: e.channel || '',
+    // 渠道在库里是「分类/渠道」，列表只显示后半段
+    channelShort: e.channel ? String(e.channel).split('/').pop() : '',
     consumer: e.consumer || '',
     account: e.account || '',
     tradeAt: e.tradeAt,
@@ -389,6 +391,20 @@ module.exports = {
   deleteTagRule,
 
   approveWebQr: api.approveWebQr,
+
+  /** 绑定微信到当前账号（带 mergeTicket 时确认合并） */
+  bindWeChat: function (mergeTicket) {
+    return api.bindWeChat(mergeTicket)
+  },
+
+  /** 设置 / 修改密码；纯微信账号可同时补邮箱。成功后刷新本地 user */
+  changePassword: async function (payload) {
+    const res = await api.call('POST', '/api/auth/password', payload)
+    if (res && res.ok && res.user) {
+      api.setUser(res.user)
+    }
+    return res && res.ok ? { ok: true } : res
+  },
 
   envInfo: function () {
     return { env: api.config.env, baseUrl: api.config.baseUrl, allowDevLogin: api.config.allowDevLogin }
