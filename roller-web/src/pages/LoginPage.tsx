@@ -7,6 +7,8 @@ import styles from './LoginPage.module.css'
 
 type Tab = 'login' | 'register'
 
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
 /** 扫码登录面板的状态机：待生成 → 展示配对码等小程序批准 → 完成/失败 */
 type WxState =
   | { phase: 'idle' }
@@ -20,15 +22,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nickName, setNickName] = useState('')
+  const [emailCode, setEmailCode] = useState('')
+  const [emailInvalid, setEmailInvalid] = useState(false)
+  const [codeSending, setCodeSending] = useState(false)
+  const [codeCooldown, setCodeCooldown] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [wx, setWx] = useState<WxState>({ phase: 'idle' })
   const pollRef = useRef<number | null>(null)
+  const codeTimerRef = useRef<number | null>(null)
 
-  // 离开页面/切换状态时停掉轮询
+  // 离开页面/切换状态时停掉轮询与倒计时
   useEffect(() => {
     return () => {
       if (pollRef.current) window.clearTimeout(pollRef.current)
+      if (codeTimerRef.current) window.clearInterval(codeTimerRef.current)
     }
   }, [])
 
@@ -38,6 +46,47 @@ export default function LoginPage() {
     if (busy) return
     setTab(next)
     setError(null)
+    setEmailInvalid(false)
+  }
+
+  /** 发送注册验证码：先校验邮箱格式，再请求后端发信 */
+  async function sendRegisterCode() {
+    if (codeSending || codeCooldown > 0) return
+    setError(null)
+
+    const mail = email.trim()
+    if (!EMAIL_RE.test(mail)) {
+      setEmailInvalid(true)
+      setError('请输入正确的邮箱地址')
+      return
+    }
+
+    setCodeSending(true)
+    try {
+      const res = await authApi.sendEmailCode(mail, 'register')
+      setCodeCooldown(60)
+      codeTimerRef.current = window.setInterval(() => {
+        setCodeCooldown((c) => {
+          if (c <= 1) {
+            if (codeTimerRef.current) window.clearInterval(codeTimerRef.current)
+            return 0
+          }
+          return c - 1
+        })
+      }, 1000)
+
+      if (res.debugCode) {
+        // 开发环境邮件服务未配置，验证码直接展示出来方便联调
+        setError(`开发模式验证码：${res.debugCode}`)
+      } else {
+        setError(null)
+        alert('验证码已发送，请查收邮件')
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '发送失败，请稍后再试')
+    } finally {
+      setCodeSending(false)
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -48,7 +97,12 @@ export default function LoginPage() {
 
     try {
       if (isRegister) {
-        await register(email.trim(), password, nickName.trim() || undefined)
+        if (!emailCode.trim()) {
+          setError('请输入邮箱验证码')
+          setBusy(false)
+          return
+        }
+        await register(email.trim(), password, emailCode.trim(), nickName.trim() || undefined)
       } else {
         await login(email.trim(), password)
       }
@@ -216,17 +270,65 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.fields}>
-            <label className={styles.field}>
-              <span>邮箱</span>
-              <input
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </label>
+            {isRegister ? (
+              <>
+                <div className={styles.field}>
+                  <span>邮箱</span>
+                  <div className={styles.emailRow}>
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        setEmailInvalid(false)
+                      }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className={`btn btn-ghost ${styles.sendBtn} ${codeSending || codeCooldown > 0 ? styles.sendBtnDisabled : ''}`}
+                      onClick={sendRegisterCode}
+                      disabled={codeSending || codeCooldown > 0}
+                    >
+                      {codeSending
+                        ? '发送中…'
+                        : codeCooldown > 0
+                          ? `${codeCooldown}s 后重发`
+                          : '发送验证码'}
+                    </button>
+                  </div>
+                  {emailInvalid && <p className={styles.errorText}>请输入正确的邮箱地址</p>}
+                </div>
+
+                <label className={styles.field}>
+                  <span>验证码</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="6 位邮箱验证码"
+                    value={emailCode}
+                    onChange={(e) => setEmailCode(e.target.value)}
+                    required
+                  />
+                </label>
+              </>
+            ) : (
+              <label className={styles.field}>
+                <span>邮箱</span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </label>
+            )}
 
             <label className={styles.field}>
               <span>密码</span>

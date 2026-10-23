@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import EntriesPage from './pages/EntriesPage'
 import ChartsPage from './pages/ChartsPage'
 import OptionsPage from './pages/OptionsPage'
+import AccountPage from './pages/AccountPage'
 import AppLayout from './components/AppLayout'
 
 /** 未登录一律回登录页，并记住原本想去哪 */
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/" element={<EntriesPage />} />
         <Route path="/charts" element={<ChartsPage />} />
         <Route path="/options" element={<OptionsPage />} />
+        <Route path="/account" element={<AccountPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

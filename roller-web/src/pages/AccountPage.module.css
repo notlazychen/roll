@@ -1,0 +1,130 @@
+/* 账号管理页：绑定微信 / 绑定邮箱，与小程序「我的 → 账号」保持一致 */
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.panel {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+/* --------------------------- 设置行 --------------------------- */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowName {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.rowSub {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* --------------------------- 邮箱验证码表单 --------------------------- */
+
+.form {
+  padding: 14px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.formHint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: #fafbfc;
+  font-size: 14px;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  background: #fff;
+}
+
+.inputInvalid {
+  border-color: var(--expense);
+  background: #fdecea;
+}
+
+.sendBtn {
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.sendBtnDisabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.errorText {
+  font-size: 12.5px;
+  color: var(--expense);
+  margin: -4px 0 0;
+}

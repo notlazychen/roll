@@ -15,18 +15,40 @@ import type {
 /* --------------------------- 认证 --------------------------- */
 
 export const authApi = {
-  register: (email: string, password: string, nickName?: string) =>
-    http.post<AuthResponse>('/api/auth/register', { email, password, nickName }, true),
+  register: (email: string, password: string, code: string, nickName?: string) =>
+    http.post<AuthResponse>('/api/auth/register', { email, password, code, nickName }, true),
 
   login: (email: string, password: string) =>
     http.post<AuthResponse>('/api/auth/login', { email, password }, true),
 
-  /** 修改/设置密码；纯微信账号可以借这个补一个密码，之后就能用邮箱登录 */
+  /** 修改/设置密码（需要登录态） */
   changePassword: (newPassword: string, oldPassword?: string) =>
     http.post<{ ok: boolean; token: string }>('/api/auth/password', {
       newPassword,
       oldPassword: oldPassword ?? null
     }),
+
+  /** 发送邮箱验证码。purpose: register（注册）/ bind（绑定邮箱）/ unbind（解绑邮箱） */
+  sendEmailCode: (email: string, purpose: 'register' | 'bind' | 'unbind') =>
+    http.post<{
+      ok: boolean
+      sent: boolean
+      /** 开发环境邮件服务未配置时，验证码直接返回（仅 Development） */
+      debugCode?: string
+      hint?: string
+    }>('/api/auth/email-code', { email, purpose }, true),
+
+  /** 绑定邮箱：验证码发到新邮箱，验证通过后落库 */
+  bindEmail: (email: string, code: string) =>
+    http.post<{ ok: boolean; user: User }>('/api/auth/bind-email', { email, code }),
+
+  /** 解绑邮箱：验证码发到当前绑定的邮箱 */
+  unbindEmail: (code: string) =>
+    http.post<{ ok: boolean; user: User }>('/api/auth/unbind-email', { code }),
+
+  /** 解绑微信：网页端没有微信授权能力，登录态鉴权后直接解绑 */
+  unbindWeChat: () =>
+    http.post<{ ok: boolean; user: User }>('/api/auth/unbind-wechat', { code: null }),
 
   me: () => http.get<MeResponse>('/api/me'),
 

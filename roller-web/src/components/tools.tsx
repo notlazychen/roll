@@ -15,7 +15,8 @@ export const TOOLS = [
     children: [
       { to: '/', label: '明细', icon: ListIcon, end: true },
       { to: '/charts', label: '图表', icon: ChartIcon },
-      { to: '/options', label: '选项源', icon: TagIcon }
+      { to: '/options', label: '选项源', icon: TagIcon },
+      { to: '/account', label: '账号', icon: UserIcon }
     ]
   },
   {
@@ -122,6 +123,16 @@ export function GridIcon({ size }: IconProps) {
       <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
       <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
       <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+    </Icon>
+  )
+}
+
+/** 账号管理：人形轮廓 */
+export function UserIcon({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
     </Icon>
   )
 }

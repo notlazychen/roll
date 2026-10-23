@@ -16,7 +16,7 @@ interface AuthState {
   /** 首次进来要拿 /api/me 校验本地 token，这段期间先别渲染业务页 */
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, nickName?: string) => Promise<void>
+  register: (email: string, password: string, code: string, nickName?: string) => Promise<void>
   logout: () => void
   /** 微信扫码登录配对成功后：外部已拿到 token+user，直接落进全局状态 */
   completeWxLogin: (token: string, user: User) => void
@@ -69,12 +69,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user)
   }, [])
 
-  const register = useCallback(async (email: string, password: string, nickName?: string) => {
-    // 注册接口直接签发 token，不用再走一次登录
-    const res = await authApi.register(email, password, nickName)
-    setToken(res.token)
-    setUser(res.user)
-  }, [])
+  const register = useCallback(
+    async (email: string, password: string, code: string, nickName?: string) => {
+      // 注册接口直接签发 token，不用再走一次登录
+      const res = await authApi.register(email, password, code, nickName)
+      setToken(res.token)
+      setUser(res.user)
+    },
+    []
+  )
 
   const logout = useCallback(() => {
     clearToken()
