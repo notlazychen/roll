@@ -34,7 +34,12 @@ services:
     volumes:
       # 持久化到宿主机目录，容器重建不丢数据
       - /data/docker/pgsql:/var/lib/postgresql/data
-    # 不对外暴露端口，只有同网络的 api 能访问
+    # 只绑宿主机回环，供 SSH 隧道 / 服务器本地客户端使用：
+    #   ssh -p 50022 -L 5432:localhost:5432 ubuntu@roll.acgun.cn
+    # 公网够不着（防火墙也没放行 5432），切勿改成 "5432:5432"。
+    ports:
+      - "127.0.0.1:5432:5432"
+    # 除回环外不对外暴露端口，跨容器仍走 web 网络 roll-pgsql:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ledger}"]
       interval: 10s
