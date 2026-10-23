@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 import { ApiError } from '../lib/http'
 import styles from './AccountPage.module.css'
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$]
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 /**
  * 账号管理：与小程序「我的 → 账号」保持一致。
