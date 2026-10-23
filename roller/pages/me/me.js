@@ -16,14 +16,24 @@ Page({
     showName: false,
     nameInput: '',
 
-    showPwd: false,
-    pwdEmail: '',
-    pwdPass: '',
-    pwdBusy: false
+    // 邮箱绑定 / 解绑弹层
+    showEmail: false,
+    emailMode: 'bind', // 'bind' | 'unbind'
+    emailInput: '',
+    emailInvalid: false,
+    emailCode: '',
+    emailError: '',
+    codeSending: false,
+    codeCooldown: 0,
+    emailBusy: false
   },
 
   onShow() {
     this.load()
+  },
+
+  onUnload() {
+    this.stopCodeTimer()
   },
 
   async load() {
@@ -178,17 +188,7 @@ Page({
     wx.navigateTo({ url: '/pages/options/options?kind=' + kind })
   },
 
-  copyBaseUrl() {
-    const url = (this.data.env && this.data.env.baseUrl) || ''
-    wx.setClipboardData({
-      data: url,
-      success: function () { util.toast('已复制服务地址') }
-    })
-  },
-
   /* ------------------------- 网页扫码登录 ------------------------- */
-
-  /** 在网页 roll.acgun.cn 登录页生成配对码，这里扫二维码或手输批准 */
   /* ------------------------- 账号绑定 ------------------------- */
 
   /** 绑定微信到当前账号；微信已属于其他账号时询问是否合并 */
@@ -223,45 +223,149 @@ Page({
     this.load()
   },
 
-  /** 切换到邮箱注册的账号（不合并数据） */
-  goEmailLogin() {
-    wx.navigateTo({ url: '/pages/account-link/account-link' })
-  },
+  /* ------------------------- 解绑微信 ------------------------- */
 
-  /** 纯微信账号补设邮箱 + 密码，之后可在网页登录同一账号 */
-  setPassword() {
-    this.setData({ showPwd: true, pwdEmail: '', pwdPass: '', pwdBusy: false })
-  },
-
-  closePwd() {
-    this.setData({ showPwd: false })
-  },
-
-  onPwdEmail(e) { this.setData({ pwdEmail: e.detail.value }) },
-  onPwdPass(e) { this.setData({ pwdPass: e.detail.value }) },
-
-  async submitPassword() {
-    if (this.data.pwdBusy) return
-    const email = (this.data.pwdEmail || '').trim()
-    const pass = this.data.pwdPass || ''
-    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      util.toast('邮箱格式不正确')
+  /** 解绑微信：wx.login 拿 code 做授权二次校验，服务端确认 openid 一致才解绑 */
+  async unbindWechat() {
+    if (!this.data.me.email) {
+      util.toast('请先绑定邮箱，否则解绑后将无法登录本账号')
       return
     }
-    if (pass.length < 8) {
-      util.toast('密码至少 8 位，需包含字母和数字')
+    const ok = await util.confirm(
+      '解绑微信',
+      '解绑后这个微信将无法直接登录该账号，可改用邮箱登录。确定解绑？',
+      '解绑'
+    )
+    if (!ok) return
+
+    wx.showLoading({ title: '解绑中', mask: true })
+    const r = await store.unbindWeChat()
+    wx.hideLoading()
+    if (!r.ok) return util.toast(r.error || '解绑失败')
+    util.toast('已解绑微信', 'success')
+    this.load()
+  },
+
+  /* ------------------------- 绑定 / 解绑邮箱 ------------------------- */
+
+  /** 未绑定：弹「绑定邮箱」面板（输入邮箱 + 发送验证码 + 输入验证码） */
+  openEmailBind() {
+    this.stopCodeTimer()
+    this.setData({
+      showEmail: true,
+      emailMode: 'bind',
+      emailInput: '',
+      emailInvalid: false,
+      emailCode: '',
+      emailError: '',
+      codeSending: false,
+      codeCooldown: 0,
+      emailBusy: false
+    })
+  },
+
+  /** 已绑定：弹「解绑邮箱」面板（验证码发到当前绑定邮箱） */
+  openEmailUnbind() {
+    this.stopCodeTimer()
+    this.setData({
+      showEmail: true,
+      emailMode: 'unbind',
+      emailInput: this.data.me.email || '',
+      emailInvalid: false,
+      emailCode: '',
+      emailError: '',
+      codeSending: false,
+      codeCooldown: 0,
+      emailBusy: false
+    })
+  },
+
+  closeEmail() {
+    this.stopCodeTimer()
+    this.setData({ showEmail: false })
+  },
+
+  onEmailInput(e) {
+    this.setData({ emailInput: e.detail.value, emailInvalid: false, emailError: '' })
+  },
+
+  onEmailCodeInput(e) {
+    this.setData({ emailCode: e.detail.value, emailError: '' })
+  },
+
+  stopCodeTimer() {
+    if (this._codeTimer) {
+      clearInterval(this._codeTimer)
+      this._codeTimer = null
+    }
+  },
+
+  /** 发送验证码：bind 发到输入的邮箱（格式不对标红），unbind 发到当前绑定邮箱 */
+  async sendCode() {
+    if (this.data.codeSending || this.data.codeCooldown > 0) return
+    const mode = this.data.emailMode
+    const email = mode === 'unbind'
+      ? (this.data.me.email || '')
+      : (this.data.emailInput || '').trim()
+
+    if (mode === 'bind' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      this.setData({ emailInvalid: true, emailError: '请输入正确的邮箱地址' })
       return
     }
 
-    this.setData({ pwdBusy: true })
-    const res = await store.changePassword({ email: email, newPassword: pass })
-    this.setData({ pwdBusy: false })
-    if (!res.ok) {
-      util.toast(res.error || '设置失败')
+    this.setData({ codeSending: true, emailError: '' })
+    const r = await store.sendEmailCode(email, mode === 'bind' ? 'bind' : 'unbind')
+    this.setData({ codeSending: false })
+
+    if (!r.ok) {
+      this.setData({ emailError: r.error || '发送失败' })
       return
     }
-    util.toast('已设置，可用邮箱登录网页', 'success')
-    this.setData({ showPwd: false })
+
+    // 60 秒重发倒计时
+    this.setData({ codeCooldown: 60 })
+    const that = this
+    this._codeTimer = setInterval(function () {
+      const left = that.data.codeCooldown - 1
+      if (left <= 0) {
+        that.stopCodeTimer()
+        that.setData({ codeCooldown: 0 })
+      } else {
+        that.setData({ codeCooldown: left })
+      }
+    }, 1000)
+
+    if (r.debugCode) {
+      // 开发模式：邮件服务未配置，验证码直接展示出来方便联调
+      this.setData({ emailError: '开发模式验证码：' + r.debugCode })
+    } else {
+      util.toast('验证码已发送，请查收邮件', 'success')
+    }
+  },
+
+  /** 确认绑定 / 解绑邮箱 */
+  async submitEmail() {
+    if (this.data.emailBusy) return
+    const mode = this.data.emailMode
+    const code = (this.data.emailCode || '').trim()
+    if (!code) {
+      this.setData({ emailError: '请输入验证码' })
+      return
+    }
+
+    this.setData({ emailBusy: true, emailError: '' })
+    const r = mode === 'bind'
+      ? await store.bindEmail((this.data.emailInput || '').trim(), code)
+      : await store.unbindEmail(code)
+    this.setData({ emailBusy: false })
+
+    if (!r.ok) {
+      this.setData({ emailError: r.error || '操作失败' })
+      return
+    }
+
+    util.toast(mode === 'bind' ? '邮箱已绑定' : '邮箱已解绑', 'success')
+    this.closeEmail()
     this.load()
   },
 

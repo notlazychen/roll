@@ -116,3 +116,85 @@
   transform-origin: right center;
   margin-right: -8rpx;
 }
+
+/* ---------- 顶栏扫一扫（网页扫码登录） ---------- */
+.scan-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  background: var(--primary-soft);
+}
+
+.scan-icon {
+  width: 30rpx;
+  height: 30rpx;
+  border: 4rpx solid var(--primary);
+  border-radius: 6rpx;
+  position: relative;
+}
+
+/* 三个定位角 + 底部扫描线，拼出一个「二维码」图形 */
+.scan-icon::before {
+  content: '';
+  position: absolute;
+  left: 4rpx;
+  top: 4rpx;
+  width: 7rpx;
+  height: 7rpx;
+  background: var(--primary);
+  box-shadow: 12rpx 0 0 var(--primary), 0 12rpx 0 var(--primary);
+}
+
+.scan-icon::after {
+  content: '';
+  position: absolute;
+  left: -6rpx;
+  right: -6rpx;
+  bottom: -8rpx;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: var(--primary);
+}
+
+/* ---------- 账号面板：解绑小按钮 ---------- */
+.mini-danger {
+  background: var(--expense-soft);
+  color: var(--expense);
+}
+
+.mini-disabled {
+  opacity: 0.5;
+}
+
+/* ---------- 邮箱绑定 / 解绑弹层 ---------- */
+.email-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.email-row .input {
+  flex: 1;
+  width: auto;
+}
+
+.send-code {
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 24rpx;
+  white-space: nowrap;
+}
+
+.input-error {
+  border-color: var(--expense);
+  background: var(--expense-soft);
+}
+
+.field-error {
+  font-size: 22rpx;
+  color: var(--expense);
+  margin-top: 8rpx;
+}

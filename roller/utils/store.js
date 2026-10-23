@@ -397,6 +397,26 @@ module.exports = {
     return api.bindWeChat(mergeTicket)
   },
 
+  /** 发送邮箱验证码 purpose: 'register' | 'bind' | 'unbind' */
+  sendEmailCode: function (email, purpose) {
+    return api.sendEmailCode(email, purpose)
+  },
+
+  /** 绑定邮箱（验证码校验），成功后本地 user 已更新 */
+  bindEmail: function (email, code) {
+    return api.bindEmail(email, code)
+  },
+
+  /** 解绑邮箱（验证码发到当前绑定邮箱），成功后本地 user 已更新 */
+  unbindEmail: function (code) {
+    return api.unbindEmail(code)
+  },
+
+  /** 解绑微信（wx.login 授权二次校验），成功后本地 user 已更新 */
+  unbindWeChat: function () {
+    return api.unbindWeChat()
+  },
+
   /** 设置 / 修改密码；纯微信账号可同时补邮箱。成功后刷新本地 user */
   changePassword: async function (payload) {
     const res = await api.call('POST', '/api/auth/password', payload)

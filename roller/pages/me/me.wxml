@@ -3,6 +3,12 @@
 
     <view class="topbar">
       <text class="topbar-title">我的</text>
+      <view class="topbar-right">
+        <!-- 扫一扫登录网页：扫码或在网页输入配对码批准 -->
+        <view class="scan-btn" bindtap="webLogin">
+          <view class="scan-icon"></view>
+        </view>
+      </view>
     </view>
 
     <!-- ============ 未登录 ============ -->
@@ -108,44 +114,26 @@
       <view class="panel">
         <text class="panel-title">账号</text>
 
-        <view class="set-row" wx:if="{{!me.wechatBound}}" bindtap="bindWechat">
+        <!-- 绑定微信：未绑定点行绑定；已绑定右侧「解绑」 -->
+        <view class="set-row" bindtap="{{me.wechatBound ? '' : 'bindWechat'}}">
           <view class="flex1">
             <view class="set-name">绑定微信</view>
-            <view class="set-sub">绑定后本微信直接登录这个账号；若微信已属于其他账号会询问是否合并</view>
+            <view class="set-sub" wx:if="{{me.wechatBound}}">已绑定 · 解绑后可改用邮箱登录本账号</view>
+            <view class="set-sub" wx:else>绑定后可用本微信一键登录；若微信属于其他账号会询问是否合并</view>
           </view>
-          <text class="set-arrow">›</text>
+          <view class="mini-btn mini-danger" wx:if="{{me.wechatBound}}" catchtap="unbindWechat">解绑</view>
+          <text class="set-arrow" wx:else>›</text>
         </view>
 
-        <view class="set-row" wx:if="{{!me.email}}" bindtap="setPassword">
+        <!-- 绑定邮箱：未绑定点行绑定；已绑定显示邮箱 + 右侧「解绑」 -->
+        <view class="set-row" bindtap="{{me.email ? '' : 'openEmailBind'}}">
           <view class="flex1">
-            <view class="set-name">设置邮箱和密码</view>
-            <view class="set-sub">设置后可以在网页版登录同一个账号</view>
+            <view class="set-name">绑定邮箱</view>
+            <view class="set-sub" wx:if="{{me.email}}">{{me.email}}</view>
+            <view class="set-sub" wx:else>验证邮箱后即可在网页版登录同一账号</view>
           </view>
-          <text class="set-arrow">›</text>
-        </view>
-
-        <view class="set-row" wx:if="{{!me.wechatBound}}" bindtap="goEmailLogin">
-          <view class="flex1">
-            <view class="set-name">用邮箱账号登录</view>
-            <view class="set-sub">切换到邮箱注册的账号（历史账目不会合并）</view>
-          </view>
-          <text class="set-arrow">›</text>
-        </view>
-
-        <view class="set-row" bindtap="webLogin">
-          <view class="flex1">
-            <view class="set-name">扫一扫登录网页</view>
-            <view class="set-sub">在网页版输入配对码或扫这里，免输密码</view>
-          </view>
-          <text class="set-arrow">›</text>
-        </view>
-
-        <view class="set-row" bindtap="copyBaseUrl">
-          <view class="flex1">
-            <view class="set-name">连接信息</view>
-            <view class="set-sub">{{env.baseUrl}}</view>
-          </view>
-          <text class="set-arrow">›</text>
+          <view class="mini-btn mini-danger" wx:if="{{me.email}}" catchtap="openEmailUnbind">解绑</view>
+          <text class="set-arrow" wx:else>›</text>
         </view>
 
         <view class="set-row" bindtap="logout">
@@ -182,34 +170,53 @@
       </view>
     </view>
 
-    <!-- ============ 设置邮箱和密码弹层 ============ -->
-    <view class="sheet-mask" wx:if="{{showPwd}}" bindtap="closePwd">
+    <!-- ============ 绑定 / 解绑邮箱弹层 ============ -->
+    <view class="sheet-mask" wx:if="{{showEmail}}" bindtap="closeEmail">
       <view class="sheet" catchtap="noop">
         <view class="sheet-handle"></view>
         <view class="sheet-head">
-          <text class="sheet-title">设置邮箱和密码</text>
-          <text class="sheet-close" bindtap="closePwd">✕</text>
+          <text class="sheet-title">{{emailMode === 'bind' ? '绑定邮箱' : '解绑邮箱'}}</text>
+          <text class="sheet-close" bindtap="closeEmail">✕</text>
         </view>
-        <view class="t-tiny">绑定邮箱并设置密码后，就可以在网页版用邮箱登录这个账号，账目完全同步。</view>
-        <input
-          class="input mt16"
-          type="text"
-          value="{{pwdEmail}}"
-          placeholder="邮箱地址"
-          placeholder-class="ph"
-          bindinput="onPwdEmail"
-        />
-        <input
-          class="input mt12"
-          type="text"
-          password
-          value="{{pwdPass}}"
-          placeholder="密码（至少 8 位，含字母和数字）"
-          placeholder-class="ph"
-          bindinput="onPwdPass"
-        />
-        <view class="btn btn-primary mt24 {{pwdBusy ? 'btn-disabled' : ''}}" bindtap="submitPassword">
-          {{pwdBusy ? '设置中…' : '保存'}}
+
+        <block wx:if="{{emailMode === 'bind'}}">
+          <view class="t-tiny">验证通过后，就可以在网页版用这个邮箱登录同一账号，账目完全同步。</view>
+          <view class="email-row mt16">
+            <input
+              class="input flex1 {{emailInvalid ? 'input-error' : ''}}"
+              type="text"
+              value="{{emailInput}}"
+              placeholder="邮箱地址"
+              placeholder-class="ph"
+              bindinput="onEmailInput"
+            />
+          </view>
+          <view class="field-error" wx:if="{{emailInvalid}}">请输入正确的邮箱地址</view>
+        </block>
+        <view class="t-tiny" wx:else>为了确认是本人操作，验证码将发送到当前绑定的邮箱 {{me.email}}。</view>
+
+        <view class="email-row mt12">
+          <input
+            class="input flex1"
+            type="number"
+            value="{{emailCode}}"
+            maxlength="6"
+            placeholder="6 位邮箱验证码"
+            placeholder-class="ph"
+            bindinput="onEmailCodeInput"
+          />
+          <view
+            class="mini-btn send-code {{codeCooldown > 0 || codeSending ? 'mini-disabled' : ''}}"
+            bindtap="sendCode"
+          >
+            {{codeSending ? '发送中…' : (codeCooldown > 0 ? codeCooldown + 's 后重发' : '发送验证码')}}
+          </view>
+        </view>
+
+        <view class="alert alert-error mt12" wx:if="{{emailError}}">{{emailError}}</view>
+
+        <view class="btn btn-primary mt24 {{emailBusy ? 'btn-disabled' : ''}}" bindtap="submitEmail">
+          {{emailBusy ? '处理中…' : (emailMode === 'bind' ? '确认绑定' : '确认解绑')}}
         </view>
       </view>
     </view>

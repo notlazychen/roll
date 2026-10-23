@@ -238,6 +238,64 @@ async function bindWeChat(mergeTicket) {
   return toError(res, '绑定失败')
 }
 
+/* ------------------------- 邮箱验证码 / 绑定解绑 ------------------------- */
+
+/** 发送邮箱验证码。purpose: 'register' | 'bind' | 'unbind' */
+async function sendEmailCode(email, purpose) {
+  const res = await rawRequest('POST', '/api/auth/email-code', {
+    email: email,
+    purpose: purpose
+  }, false)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    return {
+      ok: true,
+      sent: !!res.data.sent,
+      // 开发环境邮件服务未配置时，验证码直接返回，方便联调
+      debugCode: res.data.debugCode || ''
+    }
+  }
+  return toError(res, '发送验证码失败')
+}
+
+/** 绑定邮箱：验证码发到新邮箱，验证通过后落库 */
+async function bindEmail(email, code) {
+  const res = await rawRequest('POST', '/api/auth/bind-email', {
+    email: email,
+    code: code
+  }, true)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    setUser(res.data.user)
+    return { ok: true, user: res.data.user }
+  }
+  return toError(res, '绑定失败')
+}
+
+/** 解绑邮箱：验证码发到当前绑定的邮箱 */
+async function unbindEmail(code) {
+  const res = await rawRequest('POST', '/api/auth/unbind-email', {
+    code: code
+  }, true)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    setUser(res.data.user)
+    return { ok: true, user: res.data.user }
+  }
+  return toError(res, '解绑失败')
+}
+
+/** 解绑微信：带 wx.login 的 code 做二次校验（必须是绑定的那个微信） */
+async function unbindWeChat() {
+  const code = await wxLogin()
+  if (!code) return { ok: false, error: '未取到微信授权' }
+  const res = await rawRequest('POST', '/api/auth/unbind-wechat', {
+    code: code
+  }, true)
+  if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+    setUser(res.data.user)
+    return { ok: true, user: res.data.user }
+  }
+  return toError(res, '解绑失败')
+}
+
 function randomKey() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
@@ -392,6 +450,10 @@ module.exports = {
   loginByEmail,
   claimWeChat,
   bindWeChat,
+  sendEmailCode,
+  bindEmail,
+  unbindEmail,
+  unbindWeChat,
   loginByDev,
   approveWebQr,
   takePendingLink,

@@ -270,8 +270,10 @@ const isStr = (v) => typeof v === 'string'
   check('关闭后不再自动识别', offHit.length === 0, offHit)
   const on = await store.updateProfile({ tagAutoEnabled: true })
   check('重新开启自动识别', on.ok === true && store.getMe().tagAutoEnabled === true)
-  const nick = await store.updateProfile({ nickName: '契约测试' })
-  check('改昵称成功', nick.ok === true && store.getMe().name === '契约测试', store.getMe())
+  // 昵称全局唯一：带上本轮时间戳，保证测试可以对着同一个库反复跑
+  const nickWant = '契约测试' + Date.now().toString(36).slice(-6)
+  const nick = await store.updateProfile({ nickName: nickWant })
+  check('改昵称成功', nick.ok === true && store.getMe().name === nickWant, store.getMe())
 
   /* ---------------- 数据隔离 ---------------- */
   console.log('\n【12】数据隔离与参数校验')
