@@ -1,0 +1,58 @@
+.login-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: calc(160rpx + env(safe-area-inset-top)) 40rpx 60rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 48rpx;
+}
+
+.logo {
+  font-size: 120rpx;
+  line-height: 1.1;
+}
+
+.brand-name {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 12rpx;
+}
+
+.brand-sub {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 8rpx;
+  letter-spacing: 2rpx;
+}
+
+.login-card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 40rpx 32rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.card-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.card-sub {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 10rpx;
+  line-height: 1.6;
+}
+
+.login-foot {
+  margin-top: auto;
+  padding-top: 40rpx;
+  text-align: center;
+}

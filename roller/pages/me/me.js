@@ -114,10 +114,8 @@ Page({
     if (!ok) return
     store.logout()
     getApp().globalData.dirty = true
-    util.toast('已退出登录')
-    setTimeout(function () {
-      wx.reLaunch({ url: '/pages/index/index' })
-    }, 600)
+    // 直接落到独立的登录页：不经过明细页，避免被任何自动登录逻辑接管
+    wx.reLaunch({ url: '/pages/login/login' })
   },
 
   /* ------------------------- 昵称 / 头像 ------------------------- */

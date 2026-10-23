@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/charts/charts",
     "pages/me/me",
+    "pages/login/login",
     "pages/account-link/account-link",
     "pages/entry/entry",
     "pages/options/options"

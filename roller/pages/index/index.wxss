@@ -293,6 +293,6 @@
 .login-title {
   font-size: 34rpx;
   font-weight: 600;
-  color: var(--ink-1);
+  color: var(--ink);
   margin-top: 12rpx;
 }

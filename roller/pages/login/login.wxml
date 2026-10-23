@@ -1,0 +1,24 @@
+<view class="login-page">
+  <view class="brand">
+    <view class="logo">🐹</view>
+    <view class="brand-name">哈姆斯特</view>
+    <view class="brand-sub">贴身小工具 · 记账</view>
+  </view>
+
+  <view class="login-card">
+    <view class="card-title">登录后开始记账</view>
+    <view class="card-sub">账目按账号隔离，云端同步；微信和邮箱是同一个账号</view>
+
+    <view class="btn btn-primary mt24 {{busy ? 'btn-disabled' : ''}}" bindtap="loginWechat">
+      {{busy ? '登录中…' : '微信一键登录'}}
+    </view>
+
+    <view class="btn btn-ghost mt16" bindtap="goEmailLogin">用邮箱账号登录</view>
+
+    <view class="alert alert-error mt16" wx:if="{{error}}">{{error}}</view>
+  </view>
+
+  <view class="login-foot">
+    <view class="t-tiny">首次使用微信登录时，会让你绑定已有邮箱账号或创建新账号</view>
+  </view>
+</view>
