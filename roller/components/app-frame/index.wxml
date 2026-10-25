@@ -10,7 +10,7 @@
       <view class="burger-line"></view>
     </view>
     <view wx:else class="back" bindtap="goBack">‹</view>
-    <text class="bar-title">{{mode === 'menu' ? '记账' : title}}</text>
+    <text class="bar-title">{{mode === 'menu' ? currentName : title}}</text>
   </view>
   <text class="bar-brand" style="margin-right: {{brandRight}}px;">哈姆斯特</text>
 </view>
@@ -18,29 +18,34 @@
 <!-- 抽屉遮罩 -->
 <view class="drawer-mask" wx:if="{{drawerOpen}}" bindtap="closeDrawer"></view>
 
-<!-- 抽屉：与 Web 的 .sidebar 移动端形态一致 -->
+<!-- 抽屉：工具分组 + 子导航 + 用户卡 -->
 <view class="drawer {{drawerOpen ? 'drawer-open' : ''}}" catchtap="noop">
   <view class="drawer-scroll" style="padding-top: {{statusBarHeight + 12}}px;">
 
     <view class="drawer-head">
       <view class="tool-badge">🐹</view>
-      <text class="tool-name">记账</text>
+      <text class="tool-name">哈姆斯特</text>
     </view>
 
-    <view class="nav-label">当前工具</view>
-    <view class="nav-group">
-      <view
-        wx:for="{{navs}}"
-        wx:key="key"
-        class="nav-item {{active === item.key ? 'nav-on' : ''}}"
-        data-key="{{item.key}}"
-        data-url="{{item.url}}"
-        bindtap="goNav"
-      >
-        <text class="nav-icon">{{item.icon}}</text>
-        <text class="nav-text">{{item.label}}</text>
+    <block wx:for="{{tools}}" wx:key="key" wx:for-item="grp">
+      <view class="nav-label tool-switch" data-key="{{grp.key}}" bindtap="goTool">
+        <text class="{{grp.key === currentTool ? 'tool-on' : ''}}">{{grp.icon}} {{grp.name}}</text>
+        <text class="tool-caret">›</text>
       </view>
-    </view>
+      <view class="nav-group">
+        <view
+          wx:for="{{grp.navs}}"
+          wx:key="key"
+          class="nav-item {{active === item.key ? 'nav-on' : ''}}"
+          data-key="{{item.key}}"
+          data-url="{{item.url}}"
+          bindtap="goNav"
+        >
+          <text class="nav-icon">{{item.icon}}</text>
+          <text class="nav-text">{{item.label}}</text>
+        </view>
+      </view>
+    </block>
 
     <view class="drawer-spacer"></view>
 

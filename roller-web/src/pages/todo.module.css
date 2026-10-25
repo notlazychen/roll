@@ -1,0 +1,397 @@
+/* 任务清单三页共享样式 */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* --------------------------- 今日任务 --------------------------- */
+
+.dateLine {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.progressWrap {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--fill, #eef1f4);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--primary-grad);
+  transition: width 0.25s ease;
+}
+
+.progressText {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line, #edf0f3);
+}
+
+.taskRow:last-child {
+  border-bottom: none;
+}
+
+/* 打卡圆钮 */
+.check {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: transparent;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.check:hover {
+  background: var(--primary-soft);
+}
+
+.check.on {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.taskBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.taskTitle {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.taskTitle.done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.taskTags {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.tagWarn {
+  background: #fdecea;
+  color: var(--expense, #e05b4a);
+}
+
+.tagMuted {
+  background: #f0f2f5;
+  color: var(--text-muted);
+}
+
+/* --------------------------- 任务规划 --------------------------- */
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.titleInput {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--line, #dde3e8);
+  border-radius: var(--r-sm, 8px);
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--text-main);
+  background: #fff;
+}
+
+.titleInput:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.segmented {
+  display: inline-flex;
+  background: #f0f2f5;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.segment {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.segmentOn {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(15, 28, 45, 0.1);
+}
+
+.weekChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  width: 40px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #dde3e8);
+  background: #fff;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.chip.on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.dateInput {
+  height: 38px;
+  border: 1px solid var(--line, #dde3e8);
+  border-radius: var(--r-sm, 8px);
+  padding: 0 10px;
+  font-size: 13.5px;
+  color: var(--text-main);
+  background: #fff;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.planRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line, #edf0f3);
+}
+
+.planRow:last-child {
+  border-bottom: none;
+}
+
+.planMeta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.countBadge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* --------------------------- 数据图表 --------------------------- */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+}
+
+.summaryCard span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.summaryCard strong {
+  font-size: 22px;
+  color: var(--text-main);
+}
+
+.summaryCard em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* 近 N 天柱状图 */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+  padding-top: 8px;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.barNum {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.bar {
+  width: 100%;
+  max-width: 26px;
+  border-radius: 5px 5px 2px 2px;
+  background: var(--primary-soft-hover, rgba(31, 138, 112, 0.14));
+  min-height: 3px;
+}
+
+.bar.hot {
+  background: var(--primary-grad);
+}
+
+.barDay {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transform: scale(0.9);
+}
+
+/* 任务榜 */
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line, #edf0f3);
+}
+
+.rankRow:last-child {
+  border-bottom: none;
+}
+
+.rankIdx {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.rankIdx.top {
+  background: var(--primary);
+  color: #fff;
+}
+
+.rankBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.rankTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rankTrack {
+  height: 5px;
+  border-radius: 3px;
+  background: #f0f2f5;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.rankFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--primary-grad);
+}
+
+.rankCount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .summary {
+    grid-template-columns: 1fr;
+  }
+}

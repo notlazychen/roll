@@ -252,3 +252,25 @@ image {
   font-size: 32rpx;
   color: #C4C8C0;
 }
+
+/* ---------- 抽屉：工具分组标题（可点击切换工具） ---------- */
+.tool-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+}
+
+.tool-switch:first-of-type {
+  margin-top: 8rpx;
+}
+
+.tool-on {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.tool-caret {
+  color: var(--ink-3);
+  font-size: 24rpx;
+}

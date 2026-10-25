@@ -11,6 +11,8 @@ public class RollDbContext : DbContext
     public DbSet<LedgerOption> Options => Set<LedgerOption>();
     public DbSet<LedgerEntry> Entries => Set<LedgerEntry>();
     public DbSet<TagRule> TagRules => Set<TagRule>();
+    public DbSet<TodoTask> TodoTasks => Set<TodoTask>();
+    public DbSet<TodoCheckIn> TodoCheckIns => Set<TodoCheckIn>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -70,6 +72,26 @@ public class RollDbContext : DbContext
             e.Property(x => x.Keyword).HasMaxLength(128).IsRequired();
             e.Property(x => x.Tag).HasMaxLength(32).IsRequired();
             e.HasIndex(x => new { x.UserId, x.Tag });
+        });
+
+        b.Entity<TodoTask>(e =>
+        {
+            e.ToTable("todo_tasks");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Title).HasMaxLength(Domain.TodoLimits.MaxTitleLength).IsRequired();
+            e.Property(x => x.Type).HasMaxLength(16).IsRequired();
+            // 今日任务按天扫描 + 规划页按用户罗列
+            e.HasIndex(x => new { x.UserId, x.Archived, x.DueDate });
+            e.HasIndex(x => new { x.UserId, x.StartDate });
+        });
+
+        b.Entity<TodoCheckIn>(e =>
+        {
+            e.ToTable("todo_checkins");
+            e.HasKey(x => x.Id);
+            // 一个任务同一天只能打一次卡（幂等）
+            e.HasIndex(x => new { x.TaskId, x.Day }).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.Day });
         });
     }
 }

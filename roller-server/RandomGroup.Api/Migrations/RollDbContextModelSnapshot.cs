@@ -273,6 +273,101 @@ namespace RandomGroup.Api.Migrations
 
                     b.ToTable("ledger_tag_rules", (string)null);
                 });
+
+            modelBuilder.Entity("RandomGroup.Api.Data.TodoCheckIn", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<long>("TaskId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("task_id");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_todo_checkins");
+
+                    b.HasIndex("TaskId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_todo_checkins_task_id_day");
+
+                    b.HasIndex("UserId", "Day")
+                        .HasDatabaseName("ix_todo_checkins_user_id_day");
+
+                    b.ToTable("todo_checkins", (string)null);
+                });
+
+            modelBuilder.Entity("RandomGroup.Api.Data.TodoTask", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Archived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("archived");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("type");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("WeekDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("week_days");
+
+                    b.HasKey("Id")
+                        .HasName("pk_todo_tasks");
+
+                    b.HasIndex("UserId", "StartDate")
+                        .HasDatabaseName("ix_todo_tasks_user_id_start_date");
+
+                    b.HasIndex("UserId", "Archived", "DueDate")
+                        .HasDatabaseName("ix_todo_tasks_user_id_archived_due_date");
+
+                    b.ToTable("todo_tasks", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }

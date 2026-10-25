@@ -211,6 +211,7 @@ app.MapAuthEndpoints();
 app.MapAccountSecurityEndpoints();
 app.MapWebQrLoginEndpoints();
 app.MapEntryEndpoints();
+app.MapTodoEndpoints();
 app.MapOptionEndpoints();
 app.MapReportEndpoints();
 

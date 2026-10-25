@@ -23,6 +23,23 @@ public static class OptionKinds
     public static bool IsValid(string? kind) => kind is not null && All.Contains(kind);
 }
 
+/// <summary>任务类型</summary>
+public static class TodoTypes
+{
+    public const string Once = "once";
+    public const string Recurring = "recurring";
+
+    public static bool IsValid(string? type) => type is Once or Recurring;
+}
+
+/// <summary>任务清单硬约束</summary>
+public static class TodoLimits
+{
+    public const int MaxTitleLength = 64;
+    /// <summary>周期位掩码：bit0=周一 … bit6=周日；每天 = 127</summary>
+    public const int WeekDaysAll = 0b1111111;
+}
+
 /// <summary>业务硬约束，与小程序端保持一致</summary>
 public static class Limits
 {

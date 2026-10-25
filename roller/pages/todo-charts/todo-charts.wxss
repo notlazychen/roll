@@ -1,0 +1,117 @@
+.todo-page {
+  padding-top: 16rpx;
+}
+
+/* ---------- 柱状图 ---------- */
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8rpx;
+  height: 280rpx;
+  padding: 16rpx 8rpx 0;
+}
+
+.chart-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.chart-num {
+  font-size: 20rpx;
+  color: var(--ink-3);
+  height: 28rpx;
+  line-height: 28rpx;
+}
+
+.chart-bar-wrap {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 40rpx;
+  min-height: 6rpx;
+  border-radius: 10rpx 10rpx 4rpx 4rpx;
+  background: var(--primary-soft-2);
+}
+
+.chart-bar-hot {
+  background: var(--primary-grad);
+}
+
+.chart-day {
+  font-size: 20rpx;
+  color: var(--ink-3);
+}
+
+/* ---------- 打卡榜 ---------- */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 22rpx 8rpx;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.rank-row:last-child {
+  border-bottom: none;
+}
+
+.rank-idx {
+  width: 44rpx;
+  height: 44rpx;
+  flex: 0 0 44rpx;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--ink-2);
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-idx-top {
+  background: var(--primary);
+  color: #fff;
+}
+
+.rank-title {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-track {
+  height: 10rpx;
+  border-radius: 6rpx;
+  background: var(--fill);
+  margin-top: 10rpx;
+  overflow: hidden;
+}
+
+.rank-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  background: var(--primary-grad);
+}
+
+.rank-count {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}

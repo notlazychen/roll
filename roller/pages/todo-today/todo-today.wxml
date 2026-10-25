@@ -1,0 +1,45 @@
+<app-frame tool="todo" active="todo-today">
+  <view class="page todo-page">
+
+    <!-- 进度卡 -->
+    <view class="card todo-progress">
+      <view class="todo-date">{{dateText}}</view>
+      <view class="todo-bar">
+        <view class="todo-bar-fill" style="width: {{percent}}%;"></view>
+      </view>
+      <view class="todo-progress-text">
+        {{total === 0 ? '今天没有安排任务' : '已完成 ' + done + ' / ' + total + '（' + percent + '%）'}}
+      </view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="empty" wx:if="{{loading}}">正在加载…</view>
+
+    <!-- 空状态 -->
+    <view class="empty" wx:elif="{{tasks.length === 0}}">
+      今天没有要做的任务。
+      <view class="btn btn-ghost btn-sm todo-empty-btn" bindtap="goPlan">去任务规划安排一个</view>
+    </view>
+
+    <!-- 任务列表 -->
+    <view class="card" wx:elif="{{tasks.length > 0}}">
+      <view class="todo-row" wx:for="{{tasks}}" wx:key="id">
+        <view
+          class="todo-check {{item.done ? 'todo-check-on' : ''}}"
+          data-id="{{item.id}}"
+          data-done="{{item.done}}"
+          bindtap="toggle"
+        >✓</view>
+        <view class="flex1">
+          <view class="todo-title {{item.done ? 'todo-title-done' : ''}}">{{item.title}}</view>
+          <view class="todo-tags">
+            <text class="todo-tag {{item.overdue ? 'todo-tag-warn' : ''}}" wx:if="{{item.overdue}}">已过期</text>
+            <text class="todo-tag">{{item.typeLabel}}</text>
+            <text class="todo-tag todo-tag-muted" wx:if="{{item.dueLabel}}">{{item.dueLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</app-frame>

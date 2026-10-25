@@ -435,6 +435,42 @@ function qs(params) {
   return parts.length ? '?' + parts.join('&') : ''
 }
 
+/* ------------------------- 任务清单 ------------------------- */
+
+/** 今日任务列表（后端按任务规则生成，含打卡状态） */
+async function todoToday() {
+  return callValue('GET', '/api/todos/today' + qs({ tz: util.tzOffset() }), undefined, null)
+}
+
+/** 全部任务（规划页），失败返回空数组 */
+async function todoList() {
+  const res = await callValue('GET', '/api/todos/', undefined, null)
+  return (res && res.tasks) || []
+}
+
+/** 新建 / 编辑任务。payload: {title,type,dueDate?,weekDays?,startDate?} */
+function todoSave(id, payload) {
+  const body = Object.assign({ tz: util.tzOffset() }, payload)
+  if (id) return call('PUT', '/api/todos/' + id, body)
+  return call('POST', '/api/todos/', body)
+}
+
+/** 删除任务（打卡记录一并删除） */
+function todoRemove(id) {
+  return call('DELETE', '/api/todos/' + id)
+}
+
+/** 打卡 / 撤销打卡（同一天幂等）。返回 {ok, already, count} */
+function todoCheckIn(id, off) {
+  if (off) return call('DELETE', '/api/todos/' + id + '/checkin' + qs({ tz: util.tzOffset() }))
+  return call('POST', '/api/todos/' + id + '/checkin', { tz: util.tzOffset() })
+}
+
+/** 打卡统计：daily 每日完成数、ranking 任务榜 */
+async function todoStats(days) {
+  return callValue('GET', '/api/todos/stats' + qs({ days: days || 14, tz: util.tzOffset() }), undefined, null)
+}
+
 module.exports = {
   config,
   getToken,
@@ -458,6 +494,12 @@ module.exports = {
   approveWebQr,
   takePendingLink,
   clearPendingLink,
+  todoToday,
+  todoList,
+  todoSave,
+  todoRemove,
+  todoCheckIn,
+  todoStats,
   randomKey,
   call,
   callValue,

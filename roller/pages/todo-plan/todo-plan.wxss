@@ -1,0 +1,59 @@
+.todo-page {
+  padding-top: 16rpx;
+}
+
+/* ---------- 表单面板 ---------- */
+.todo-page .panel {
+  margin-bottom: 24rpx;
+}
+
+/* ---------- 任务列表 ---------- */
+.plan-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 26rpx 8rpx;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.plan-row:last-child {
+  border-bottom: none;
+}
+
+.plan-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.plan-meta {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  margin-top: 4rpx;
+}
+
+.plan-count {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+  white-space: nowrap;
+}
+
+.plan-ops {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.plan-op {
+  font-size: 24rpx;
+  color: var(--primary);
+  padding: 4rpx 8rpx;
+}
+
+.plan-op-danger {
+  color: var(--expense);
+}

@@ -1,0 +1,85 @@
+<app-frame tool="todo" active="todo-plan">
+  <view class="page todo-page">
+
+    <!-- 新建 / 编辑 -->
+    <view class="panel">
+      <view class="panel-head">
+        <text class="panel-title">{{editingId ? '编辑任务' : '新建任务'}}</text>
+        <text class="panel-hint" wx:if="{{editingId}}" bindtap="cancelEdit">取消编辑</text>
+      </view>
+
+      <view class="field">
+        <view class="field-label">任务内容</view>
+        <input class="input" value="{{title}}" maxlength="64" placeholder="例如：睡前读 20 页书" placeholder-class="ph" bindinput="onTitle" />
+      </view>
+
+      <view class="field">
+        <view class="field-label">类型</view>
+        <view class="seg">
+          <view class="seg-item {{type === 'once' ? 'seg-on' : ''}}" data-type="once" bindtap="onType">一次性</view>
+          <view class="seg-item {{type === 'recurring' ? 'seg-on' : ''}}" data-type="recurring" bindtap="onType">周期性</view>
+        </view>
+      </view>
+
+      <block wx:if="{{type === 'once'}}">
+        <view class="field">
+          <view class="field-label">目标日期（这天出现在今日任务里）</view>
+          <picker mode="date" value="{{dueDate}}" bindchange="onDueDate">
+            <view class="select-box"><text class="select-value">{{dueDate}}</text><text class="select-arrow">▾</text></view>
+          </picker>
+        </view>
+      </block>
+
+      <block wx:else>
+        <view class="field">
+          <view class="field-label">重复日</view>
+          <view class="chips">
+            <view
+              wx:for="{{['一','二','三','四','五','六','日']}}"
+              wx:key="*this"
+              class="chip {{weekMap[index + 1] ? 'chip-on' : ''}}"
+              data-w="{{index + 1}}"
+              bindtap="onWeekDay"
+            >周{{item}}</view>
+          </view>
+        </view>
+        <view class="field">
+          <view class="field-label">开始日期（默认今天生效）</view>
+          <picker mode="date" value="{{startDate}}" bindchange="onStartDate">
+            <view class="select-box"><text class="select-value">{{startDate}}</text><text class="select-arrow">▾</text></view>
+          </picker>
+        </view>
+      </block>
+
+      <view class="btn btn-primary {{busy ? 'btn-disabled' : ''}}" bindtap="submit">
+        {{busy ? '保存中…' : (editingId ? '保存修改' : '创建任务')}}
+      </view>
+    </view>
+
+    <!-- 任务列表 -->
+    <view class="panel">
+      <view class="panel-head">
+        <text class="panel-title">全部任务</text>
+      </view>
+
+      <view class="empty" wx:if="{{loading}}">正在加载…</view>
+      <view class="empty" wx:elif="{{tasks.length === 0}}">还没有任务，先创建一个。</view>
+
+      <view wx:else>
+        <view class="plan-row" wx:for="{{tasks}}" wx:key="id">
+          <view class="flex1">
+            <view class="plan-title">{{item.title}}</view>
+            <view class="plan-meta">{{item.ruleText}}</view>
+            <view class="plan-meta">{{item.lastText}}</view>
+          </view>
+          <view class="plan-count">打卡 {{item.checkinCount}} 次</view>
+          <view class="plan-ops">
+            <text class="plan-op" data-id="{{item.id}}" bindtap="edit">编辑</text>
+            <text class="plan-op plan-op-danger" data-id="{{item.id}}" bindtap="remove">删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</app-frame>

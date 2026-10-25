@@ -1,0 +1,64 @@
+<app-frame tool="todo" active="todo-charts">
+  <view class="page todo-page">
+
+    <view class="empty" wx:if="{{loading}}">正在加载…</view>
+
+    <block wx:else>
+      <!-- 汇总 -->
+      <view class="stats stats-3">
+        <view class="stat-card">
+          <view class="stat-label">累计打卡</view>
+          <view class="stat-value">{{totalText}}</view>
+          <view class="stat-em">所有任务合计</view>
+        </view>
+        <view class="stat-card">
+          <view class="stat-label">周期任务</view>
+          <view class="stat-value">{{recurringCount}}</view>
+          <view class="stat-em">进行中</view>
+        </view>
+        <view class="stat-card">
+          <view class="stat-label">待完成一次性</view>
+          <view class="stat-value">{{pendingOnceCount}}</view>
+          <view class="stat-em">尚未打卡</view>
+        </view>
+      </view>
+
+      <!-- 近 14 天柱状图 -->
+      <view class="panel">
+        <view class="panel-head">
+          <text class="panel-title">近 14 天每日完成</text>
+        </view>
+        <view class="chart">
+          <view class="chart-col" wx:for="{{bars}}" wx:key="day">
+            <text class="chart-num">{{item.count > 0 ? item.count : ''}}</text>
+            <view class="chart-bar-wrap">
+              <view class="chart-bar {{item.hot ? 'chart-bar-hot' : ''}}" style="height: {{item.heightPct}}%;"></view>
+            </view>
+            <text class="chart-day">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 任务打卡榜 -->
+      <view class="panel">
+        <view class="panel-head">
+          <text class="panel-title">任务打卡榜</text>
+        </view>
+        <view class="empty" wx:if="{{!hasRanking}}">还没有打卡记录</view>
+        <view wx:else>
+          <view class="rank-row" wx:for="{{ranking}}" wx:key="id">
+            <view class="rank-idx {{item.top3 ? 'rank-idx-top' : ''}}">{{index + 1}}</view>
+            <view class="flex1">
+              <view class="rank-title">{{item.title}}</view>
+              <view class="rank-track">
+                <view class="rank-fill" style="width: {{item.fillPct}}%;"></view>
+              </view>
+            </view>
+            <text class="rank-count">{{item.count}} 次</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+  </view>
+</app-frame>

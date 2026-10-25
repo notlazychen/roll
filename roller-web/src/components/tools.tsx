@@ -20,12 +20,16 @@ export const TOOLS = [
   },
   {
     key: 'todo',
-    label: '待办清单',
-    desc: '把要做的事一件件划掉',
+    label: '任务清单',
+    desc: '今日任务、规划与打卡图表',
     icon: CheckIcon,
-    ready: false,
+    ready: true,
     home: '/todo',
-    children: []
+    children: [
+      { to: '/todo', label: '今日任务', icon: CheckIcon, end: true },
+      { to: '/todo/plan', label: '任务规划', icon: ListIcon },
+      { to: '/todo/charts', label: '数据图表', icon: ChartIcon }
+    ]
   },
   {
     key: 'more',

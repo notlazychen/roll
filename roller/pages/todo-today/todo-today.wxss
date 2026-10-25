@@ -1,0 +1,110 @@
+.todo-page {
+  padding-top: 16rpx;
+}
+
+/* ---------- 进度卡 ---------- */
+.todo-progress {
+  padding: 32rpx;
+}
+
+.todo-date {
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+.todo-bar {
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: var(--fill);
+  overflow: hidden;
+  margin-top: 20rpx;
+}
+
+.todo-bar-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  background: var(--primary-grad);
+  transition: width 0.3s ease;
+}
+
+.todo-progress-text {
+  font-size: 24rpx;
+  color: var(--ink-2);
+  margin-top: 12rpx;
+}
+
+/* ---------- 任务行 ---------- */
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 8rpx;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.todo-row:last-child {
+  border-bottom: none;
+}
+
+/* 打卡圆钮 */
+.todo-check {
+  width: 52rpx;
+  height: 52rpx;
+  flex: 0 0 52rpx;
+  border-radius: 50%;
+  border: 4rpx solid var(--primary);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  line-height: 1;
+}
+
+.todo-check-on {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.todo-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.todo-title-done {
+  text-decoration: line-through;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.todo-tags {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 8rpx;
+  flex-wrap: wrap;
+}
+
+.todo-tag {
+  font-size: 20rpx;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.todo-tag-muted {
+  background: var(--fill);
+  color: var(--ink-3);
+}
+
+.todo-tag-warn {
+  background: var(--expense-soft);
+  color: var(--expense);
+}
+
+.todo-empty-btn {
+  margin: 24rpx auto 0;
+  display: inline-block;
+}

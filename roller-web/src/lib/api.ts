@@ -127,6 +127,95 @@ export const reportApi = {
     http.get<Report>('/api/reports', {
       from,
       to,
-      tz: new Date().getTimezoneOffset()
+      tz: tzOff()
     })
+}
+
+/* --------------------------- 任务清单 --------------------------- */
+
+/** 与后端报表一致的时区约定：东八区 = 480（本地 = UTC + tz 分钟） */
+function tzOff(): number {
+  return -new Date().getTimezoneOffset()
+}
+
+export type TodoType = 'once' | 'recurring'
+
+export interface TodoTask {
+  id: number
+  title: string
+  type: TodoType
+  /** yyyy-MM-dd；一次性任务才有 */
+  dueDate: string | null
+  /** 1=周一 … 7=周日；周期性任务才有 */
+  weekDays: number[] | null
+  startDate: string | null
+  archived: boolean
+  createdAt: number
+  checkinCount: number
+  lastCheckIn: string | null
+}
+
+export interface TodoTodayItem {
+  id: number
+  title: string
+  type: TodoType
+  dueDate: string | null
+  weekDays: number[] | null
+  checkedIn: boolean
+  done: boolean
+  overdue: boolean
+  times: number
+}
+
+export interface TodoToday {
+  date: string
+  total: number
+  done: number
+  tasks: TodoTodayItem[]
+}
+
+export interface TodoStats {
+  totalCheckins: number
+  recurringCount: number
+  pendingOnceCount: number
+  daily: { day: string; count: number }[]
+  ranking: { id: number; title: string; type: TodoType; count: number }[]
+}
+
+export interface TodoSavePayload {
+  title: string
+  type: TodoType
+  /** 一次性任务目标日 yyyy-MM-dd */
+  dueDate?: string
+  /** 周期重复日（1=周一…7=周日） */
+  weekDays?: number[]
+  startDate?: string
+  /** 与后端报表一致：东八区 = 480 */
+  tz?: number
+}
+
+export const todoApi = {
+  list: () => http.get<{ ok: boolean; tasks: TodoTask[] }>('/api/todos/').then((r) => r.tasks),
+
+  today: () =>
+    http.get<TodoToday>('/api/todos/today', { tz: tzOff() }),
+
+  create: (payload: TodoSavePayload) =>
+    http.post<{ ok: boolean; task: TodoTask }>('/api/todos/', payload),
+
+  update: (id: number, payload: TodoSavePayload) =>
+    http.put<{ ok: boolean; task: TodoTask }>(`/api/todos/${id}`, payload),
+
+  remove: (id: number) => http.del<{ ok: boolean }>(`/api/todos/${id}`),
+
+  checkin: (id: number) =>
+    http.post<{ ok: boolean; already: boolean; count: number }>(`/api/todos/${id}/checkin`, {
+      tz: tzOff()
+    }),
+
+  uncheckin: (id: number) =>
+    http.del<{ ok: boolean; count: number }>(`/api/todos/${id}/checkin?tz=${tzOff()}`),
+
+  stats: (days = 14) =>
+    http.get<TodoStats>('/api/todos/stats', { days, tz: tzOff() })
 }

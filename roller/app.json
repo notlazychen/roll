@@ -6,7 +6,10 @@
     "pages/login/login",
     "pages/account-link/account-link",
     "pages/entry/entry",
-    "pages/options/options"
+    "pages/options/options",
+    "pages/todo-today/todo-today",
+    "pages/todo-plan/todo-plan",
+    "pages/todo-charts/todo-charts"
   ],
   "window": {
     "navigationStyle": "custom",
