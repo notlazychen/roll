@@ -62,7 +62,7 @@ export default function TodoChartsPage() {
               </div>
             </div>
 
-            <section className="card">
+            <section className={`card ${styles.panel}`}>
               <h2 className={styles.fieldLabel}>近 14 天每日完成</h2>
               <div className={styles.bars}>
                 {stats.daily.map((d) => {
@@ -81,7 +81,7 @@ export default function TodoChartsPage() {
               </div>
             </section>
 
-            <section className="card">
+            <section className={`card ${styles.panel}`}>
               <h2 className={styles.fieldLabel}>任务打卡榜</h2>
               {stats.ranking.length === 0 ? (
                 <div className="empty">还没有打卡记录</div>

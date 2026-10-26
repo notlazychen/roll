@@ -127,7 +127,7 @@ export default function TodoPlanPage() {
       <div className="content">
         <div className={styles.page}>
           {/* ---------------- 新建 / 编辑表单 ---------------- */}
-          <section className={`card ${styles.formGrid}`}>
+          <section className={`card ${styles.panel} ${styles.formGrid}`}>
             <div>
               <label className={styles.fieldLabel} htmlFor="todo-title">
                 {editing ? '编辑任务' : '新建任务'}
@@ -221,7 +221,7 @@ export default function TodoPlanPage() {
           {!loading && tasks.length === 0 && <div className="empty">还没有任务，先创建一个。</div>}
 
           {!loading && tasks.length > 0 && (
-            <section className="card">
+            <section className={`card ${styles.panel}`}>
               {tasks.map((t) => (
                 <div key={t.id} className={styles.planRow}>
                   <div className={styles.taskBody}>

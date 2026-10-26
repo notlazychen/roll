@@ -74,7 +74,7 @@ export default function TodoTodayPage() {
 
       <div className="content">
         <div className={styles.page}>
-          <section className="card">
+          <section className={`card ${styles.panel}`}>
             <div className={styles.dateLine}>
               {fmtDate(now)} · {weekLabel(now)}
             </div>
@@ -98,7 +98,7 @@ export default function TodoTodayPage() {
           )}
 
           {!loading && data && data.tasks.length > 0 && (
-            <section className="card">
+            <section className={`card ${styles.panel}`}>
               <div className={styles.taskList}>
                 {data.tasks.map((t) => (
                   <div key={t.id} className={styles.taskRow}>

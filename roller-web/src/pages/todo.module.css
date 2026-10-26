@@ -6,6 +6,11 @@
   gap: 16px;
 }
 
+/* 卡片内边距：全局 .card 只有背景圆角，内容一律套这层（与记账页 panel 一致） */
+.panel {
+  padding: 18px 20px;
+}
+
 /* --------------------------- 今日任务 --------------------------- */
 
 .dateLine {
@@ -36,13 +41,15 @@
 .taskList {
   display: flex;
   flex-direction: column;
+  /* 铺满卡片：抵消 .panel 左右内边距，分隔线贯穿整卡 */
+  margin: 0 -20px;
 }
 
 .taskRow {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 4px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--line, #edf0f3);
 }
 
@@ -222,7 +229,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 4px;
+  padding: 14px 20px;
+  /* 铺满卡片：抵消 .panel 左右内边距 */
+  margin: 0 -20px;
   border-bottom: 1px solid var(--line, #edf0f3);
 }
 
@@ -329,7 +338,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 0;
+  padding: 10px 20px;
+  /* 铺满卡片：抵消 .panel 左右内边距 */
+  margin: 0 -20px;
   border-bottom: 1px solid var(--line, #edf0f3);
 }
 
