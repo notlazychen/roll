@@ -18,15 +18,11 @@
   z-index: 40;
 }
 
-/* 头部：工具切换器 + 移动端关闭钮 */
+/* 头部：工具切换器 */
 .sidebar-head {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.drawer-close {
-  display: none;
 }
 
 .nav-group {
@@ -248,11 +244,6 @@
 
   .sidebar.is-open {
     transform: translateX(0);
-  }
-
-  .drawer-close {
-    display: grid;
-    flex: 0 0 auto;
   }
 
   .drawer-mask {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import ToolSwitcher from './ToolSwitcher'
-import { TOOLS, LogoutIcon, MenuIcon, CloseIcon } from './tools'
+import { TOOLS, LogoutIcon, MenuIcon } from './tools'
 
 /**
  * 工具集的站点骨架。
@@ -55,21 +55,13 @@ export default function AppLayout() {
       )}
 
       <aside className={`sidebar ${drawerOpen ? 'is-open' : ''}`}>
-        {/* 左上角主标题变成「工具名 + 切换按钮」 */}
+        {/* 左上角主标题就是「工具名 + 切换按钮」；移动端靠点遮罩收起抽屉 */}
         <div className="sidebar-head">
           <ToolSwitcher
             tools={TOOLS}
             current={currentTool}
             onNavigate={() => setDrawerOpen(false)}
           />
-          <button
-            type="button"
-            className="icon-btn drawer-close"
-            onClick={() => setDrawerOpen(false)}
-            aria-label="关闭菜单"
-          >
-            <CloseIcon />
-          </button>
         </div>
 
         <nav className="nav-group">
