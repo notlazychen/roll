@@ -107,29 +107,63 @@ image {
   overflow-y: auto;
 }
 
+/* 头部：当前工具（图标 + 名称）+ 切换按钮，对齐 Web 的 ToolSwitcher */
 .drawer-head {
   display: flex;
   align-items: center;
+  gap: 8rpx;
 }
 
 .tool-badge {
   width: 68rpx;
   height: 68rpx;
-  border-radius: 20rpx;
+  border-radius: 22rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 34rpx;
   flex-shrink: 0;
-  background: linear-gradient(90deg, #1F8A70 0%, #2BAE8A 100%);
+  background: var(--primary-grad);
+  box-shadow: 0 8rpx 24rpx rgba(31, 138, 112, 0.28);
 }
 
 .tool-name {
   flex: 1;
   min-width: 0;
-  font-size: 30rpx;
+  font-size: 38rpx;
   font-weight: 700;
-  margin-left: 16rpx;
+  margin-left: 10rpx;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 切换按钮：⇄ 图标，展开时变实心绿并转 90° */
+.tool-toggle {
+  width: 60rpx;
+  height: 60rpx;
+  flex: 0 0 60rpx;
+  border: 1rpx solid var(--line);
+  border-radius: 18rpx;
+  background: var(--card);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.tool-toggle-icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.tool-toggle-on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+  transform: rotate(90deg);
 }
 
 .drawer-close {
@@ -253,24 +287,115 @@ image {
   color: #C4C8C0;
 }
 
-/* ---------- 抽屉：工具分组标题（可点击切换工具） ---------- */
-.tool-switch {
+/* ---------- 工具切换列表（对齐 Web 的 ToolSwitcher 下拉菜单） ---------- */
+.tool-menu {
+  margin-top: 16rpx;
+  padding: 12rpx;
+  background: var(--card);
+  border: 1rpx solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 16rpx 40rpx rgba(0, 22, 69, 0.12);
+}
+
+.tool-menu-label {
+  font-size: 21rpx;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  padding: 12rpx 20rpx 8rpx;
+}
+
+.tool-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 20rpx;
+  gap: 20rpx;
+  padding: 18rpx 20rpx;
+  border-radius: var(--r-sm);
 }
 
-.tool-switch:first-of-type {
-  margin-top: 8rpx;
+.tool-item:active {
+  background: var(--primary-soft);
 }
 
-.tool-on {
-  color: var(--primary);
-  font-weight: 700;
+.tool-item-on {
+  background: var(--primary-soft);
 }
 
-.tool-caret {
+.tool-item-off {
+  opacity: 0.45;
+}
+
+.tool-item-icon {
+  width: 60rpx;
+  height: 60rpx;
+  flex: 0 0 60rpx;
+  border-radius: 18rpx;
+  background: var(--fill);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+}
+
+.tool-item-on .tool-item-icon {
+  background: var(--primary);
+}
+
+.tool-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-item-name {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tool-item-desc {
+  font-size: 22rpx;
   color: var(--ink-3);
+  margin-top: 2rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tag-now,
+.tag-soon {
+  font-size: 19rpx;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 2rpx 10rpx;
+  border-radius: 100rpx;
+  white-space: nowrap;
+}
+
+.tag-now {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+.tag-soon {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink-3);
+}
+
+.tool-item-check {
   font-size: 24rpx;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* 工具还没有子页面时的占位（对齐 Web 的 .nav-empty） */
+.nav-empty {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  padding: 20rpx 24rpx;
 }
